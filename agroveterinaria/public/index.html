@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroVeterinaria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --verde: #06A049;
+            --verde-oscuro: #047a37;
+            --fondo: #fdfbf2;
+        }
+        body { background-color: var(--fondo); font-family: 'Segoe UI', sans-serif; }
+        .main-header { background-color: var(--verde); padding: 10px 0; }
+        .search-input { border-radius: 20px 0 0 20px; border: none; }
+        .search-btn { border-radius: 0 20px 20px 0; background: white; color: var(--verde); border: none; }
+        .hero-banner {
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+            url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80') center/cover;
+            height: 280px; display: flex; align-items: center; justify-content: center;
+        }
+        .promo-box { background: rgba(255,255,255,0.92); padding: 25px; border-radius: 10px; text-align: center; border: 2px solid var(--verde); }
+        .product-card { background: white; border: none; border-radius: 15px; overflow: hidden; transition: 0.3s; height: 100%; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .product-img-container { height: 200px; overflow: hidden; background: #f8f9fa; }
+        .product-img { height: 100%; width: 100%; object-fit: cover; transition: 0.5s; }
+        .product-card:hover .product-img { transform: scale(1.05); }
+        .btn-add {
+            background-color: var(--verde); color: white; border-radius: 50%;
+            width: 42px; height: 42px; display: flex; align-items: center;
+            justify-content: center; border: none; transition: 0.2s; margin: 0 auto;
+        }
+        .btn-add:hover { background-color: var(--verde-oscuro); transform: scale(1.1); }
+        .footer-agro { background-color: var(--verde-oscuro); color: white; padding: 40px 0; margin-top: 50px; }
+        .badge-carrito { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<header class="main-header shadow-sm">
+    <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+        <a href="/" class="text-decoration-none">
+            <img src="/img/logo.jpeg" alt="Logo" style="height:80px;">
+        </a>
+        <div class="d-flex w-50">
+            <input type="text" id="inputBuscador" class="form-control search-input" placeholder="¿Qué estás buscando hoy?">
+            <button class="btn search-btn px-3"><i class="bi bi-search"></i></button>
+        </div>
+        <div class="d-flex gap-4 align-items-center">
+            <a href="/carrito.html" class="text-white position-relative">
+                <i class="bi bi-cart3 fs-4"></i>
+                <span id="cart-count" class="badge-carrito">0</span>
+            </a>
+            <a href="/login.html" class="text-white" id="btn-usuario">
+                <i class="bi bi-person-circle fs-4"></i>
+            </a>
+        </div>
+    </div>
+</header>
+
+<section class="hero-banner">
+    <div class="promo-box shadow">
+        <h2 class="text-danger fw-bold">VENTA DE PRODUCTOS</h2>
+        <p class="mb-0 text-dark fs-5">Cuidamos la salud de tus animales como tú lo harías</p>
+        <p class="mb-0 fs-4">🐶🐄</p>
+    </div>
+</section>
+
+<main class="container my-5">
+
+    <!-- FILTROS -->
+    <div class="row mb-4 g-2">
+        <div class="col-md-4">
+            <select id="filtroCategoria" class="form-select">
+                <option value="">Todas las categorías</option>
+                <option value="1">Alimentos</option>
+                <option value="2">Medicamentos</option>
+                <option value="3">Accesorios</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="number" id="filtroPrecioMin" class="form-control" placeholder="Precio mínimo">
+        </div>
+        <div class="col-md-3">
+            <input type="number" id="filtroPrecioMax" class="form-control" placeholder="Precio máximo">
+        </div>
+        <div class="col-md-2">
+            <button class="btn w-100" style="background-color:#06A049;color:white;" onclick="aplicarFiltros()">
+                <i class="bi bi-funnel"></i> Filtrar
+            </button>
+        </div>
+    </div>
+
+    <h3 class="text-success fw-bold mb-4 border-bottom pb-2">Nuestros Productos</h3>
+    <div class="row g-4" id="lista-productos">
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p>Cargando productos...</p>
+        </div>
+    </div>
+</main>
+
+<footer class="footer-agro">
+    <div class="container text-center text-md-start">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h5 class="fw-bold border-bottom pb-2">CONTÁCTANOS</h5>
+                <p><i class="bi bi-telephone-fill me-2"></i> 954 800 966</p>
+                <p><i class="bi bi-envelope-fill me-2"></i> contacto@agroventa.com</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5 class="fw-bold border-bottom pb-2">DIRECCIÓN</h5>
+                <p>Jr. Calixto N°276 y jr.Amazonas N°753<br>Huancayo, Junín - Perú.</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <h5 class="fw-bold border-bottom pb-2">EMPRESA</h5>
+                <a href="/nosotros.html" class="text-white text-decoration-none d-block mb-2">Sobre Nosotros</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="/js/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
