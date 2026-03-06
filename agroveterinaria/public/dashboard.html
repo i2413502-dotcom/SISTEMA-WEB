@@ -22,7 +22,6 @@
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
         .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
         .table-container { background: white; border-radius: 15px; padding: 20px; }
-        .badge-estado { padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; }
         .topbar { background: white; padding: 15px 30px; margin: -30px -30px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
     </style>
 </head>
@@ -34,26 +33,30 @@
         <img src="/img/logo.jpeg" alt="Logo" style="height:70px; border-radius:10px;">
         <h6 class="text-white mt-2 fw-bold">Panel Admin</h6>
     </div>
-
     <ul class="nav flex-column">
         <li class="nav-item">
-            <a class="nav-link active" href="#" onclick="mostrarSeccion('inicio')">
+            <a class="nav-link active" href="#" onclick="mostrarSeccion('inicio', this)">
                 <i class="bi bi-house me-2"></i>Inicio
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#" onclick="mostrarSeccion('pedidos')">
+            <a class="nav-link" href="#" onclick="mostrarSeccion('pedidos', this)">
                 <i class="bi bi-bag me-2"></i>Pedidos
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#" onclick="mostrarSeccion('productos')">
+            <a class="nav-link" href="#" onclick="mostrarSeccion('productos', this)">
                 <i class="bi bi-box me-2"></i>Productos
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#" onclick="mostrarSeccion('clientes')">
+            <a class="nav-link" href="#" onclick="mostrarSeccion('clientes', this)">
                 <i class="bi bi-people me-2"></i>Clientes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" onclick="mostrarSeccion('categorias', this)">
+                <i class="bi bi-tags me-2"></i>Categorías
             </a>
         </li>
         <li class="nav-item mt-3">
@@ -133,7 +136,6 @@
             </div>
         </div>
 
-        <!-- Pedidos recientes -->
         <div class="table-container shadow-sm">
             <h6 class="fw-bold text-success mb-3">
                 <i class="bi bi-clock-history me-2"></i>Pedidos Recientes
@@ -142,13 +144,8 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Cliente</th>
-                            <th>Total</th>
-                            <th>Zona</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acción</th>
+                            <th>#</th><th>Cliente</th><th>Total</th>
+                            <th>Zona</th><th>Estado</th><th>Fecha</th><th>Acción</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-pedidos-recientes">
@@ -169,13 +166,8 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Cliente</th>
-                            <th>Dirección</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
-                            <th>Acción</th>
+                            <th>#</th><th>Cliente</th><th>Dirección</th>
+                            <th>Total</th><th>Estado</th><th>Fecha</th><th>Acción</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-pedidos">
@@ -201,13 +193,8 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Producto</th>
-                            <th>Categoría</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th>Estado Stock</th>
-                            <th>Acciones</th>
+                            <th>#</th><th>Producto</th><th>Categoría</th>
+                            <th>Precio</th><th>Stock</th><th>Estado Stock</th><th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-productos">
@@ -228,16 +215,39 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
-                            <th>Nombre</th>
-                            <th>Correo</th>
-                            <th>Teléfono</th>
-                            <th>Documento</th>
-                            <th>Fecha Registro</th>
+                            <th>#</th><th>Nombre</th><th>Correo</th>
+                            <th>Teléfono</th><th>Documento</th><th>Fecha Registro</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-clientes">
                         <tr><td colspan="6" class="text-center">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCION CATEGORIAS -->
+    <div id="seccion-categorias" class="d-none">
+        <div class="table-container shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-success mb-0">
+                    <i class="bi bi-tags me-2"></i>Categorías de Producto
+                </h6>
+                <button class="btn btn-success btn-sm" onclick="mostrarModalCategoria()">
+                    <i class="bi bi-plus-lg me-1"></i>Nueva Categoría
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th><th>Nombre</th><th>Descripción</th>
+                            <th>Estado</th><th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-categorias">
+                        <tr><td colspan="5" class="text-center">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -268,13 +278,11 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Precio (S/.)</label>
-                            <input type="number" class="form-control" id="prod-precio" 
-                                   step="0.01" min="0" required>
+                            <input type="number" class="form-control" id="prod-precio" step="0.01" min="0" required>
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Stock</label>
-                            <input type="number" class="form-control" id="prod-stock" 
-                                   min="0" required>
+                            <input type="number" class="form-control" id="prod-stock" min="0" required>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -287,14 +295,55 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen (nombre del archivo)</label>
-                        <input type="text" class="form-control" id="prod-imagen" 
-                               placeholder="Ej: producto.jpg">
+                        <input type="text" class="form-control" id="prod-imagen" placeholder="Ej: producto.jpg">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success" onclick="guardarProducto()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CATEGORIA -->
+<div class="modal fade" id="modalCategoria" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-success" id="modal-cat-titulo">
+                    Nueva Categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cat-id">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nombre</label>
+                    <input type="text" class="form-control" id="cat-nombre" 
+                           placeholder="Ej: Vitaminas" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descripción</label>
+                    <textarea class="form-control" id="cat-descripcion" 
+                              rows="2" placeholder="Descripción de la categoría"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Estado</label>
+                    <select class="form-select" id="cat-estado">
+                        <option value="ACTIVO">Activo</option>
+                        <option value="INACTIVO">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" 
+                        data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" 
+                        onclick="guardarCategoria()">
+                    <i class="bi bi-check-lg me-1"></i>Guardar
+                </button>
             </div>
         </div>
     </div>

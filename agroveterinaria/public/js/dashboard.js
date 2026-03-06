@@ -14,7 +14,7 @@ function verificarAcceso() {
 
 // Mostrar sección
 function mostrarSeccion(seccion) {
-    const secciones = ['inicio', 'pedidos', 'productos', 'clientes'];
+    const secciones = ['inicio', 'pedidos', 'productos', 'clientes','categorias'];
     secciones.forEach(s => {
         document.getElementById(`seccion-${s}`).classList.add('d-none');
     });
@@ -25,7 +25,8 @@ function mostrarSeccion(seccion) {
         inicio: 'Dashboard',
         pedidos: 'Gestión de Pedidos',
         productos: 'Inventario de Productos',
-        clientes: 'Clientes Registrados'
+        clientes: 'Clientes Registrados',
+        categorias: 'Categorías de Producto'
     };
     document.getElementById('titulo-seccion').innerText = titulos[seccion];
 
@@ -37,6 +38,7 @@ function mostrarSeccion(seccion) {
     if (seccion === 'pedidos') cargarPedidos();
     if (seccion === 'productos') cargarProductos();
     if (seccion === 'clientes') cargarClientes();
+    if (seccion === 'categorias') cargarCategorias();
 }
 
 // Cerrar sesión
@@ -319,6 +321,129 @@ async function cargarClientes() {
 window.addEventListener('DOMContentLoaded', () => {
     verificarAcceso();
     modalProducto = new bootstrap.Modal(document.getElementById('modalProducto'));
+    modalCategoria = new bootstrap.Modal(document.getElementById('modalCategoria'));
     cargarEstadisticas();
     cargarPedidosRecientes();
 });
+
+// ============================================================
+// CATEGORÍAS
+// ============================================================
+
+let modalCategoria;
+let categoriasLista = [];
+
+// Cargar y mostrar todas las categorías en la tabla
+async function cargarCategorias() {
+    try {
+        const res = await fetch('/api/categorias');
+        categoriasLista = await res.json();
+
+        const tbody = document.getElementById('tabla-categorias');
+
+        if (!categoriasLista.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay categorías</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = categoriasLista.map(c => `
+            <tr>
+                <td>${c.id_categoria}</td>
+                <td><strong>${c.nombre}</strong></td>
+                <td>${c.descripcion || '-'}</td>
+                <td>
+                    <span class="badge bg-${c.estado === 'ACTIVO' ? 'success' : 'secondary'}">
+                        ${c.estado}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" 
+                            onclick="editarCategoria(${c.id_categoria})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" 
+                            onclick="eliminarCategoria(${c.id_categoria})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+    }
+}
+
+// Abrir modal para NUEVA categoría
+function mostrarModalCategoria() {
+    document.getElementById('modal-cat-titulo').innerText = 'Nueva Categoría';
+    document.getElementById('cat-id').value        = '';
+    document.getElementById('cat-nombre').value    = '';
+    document.getElementById('cat-descripcion').value = '';
+    document.getElementById('cat-estado').value    = 'ACTIVO';
+    modalCategoria.show();
+}
+
+// Abrir modal para EDITAR categoría
+function editarCategoria(id) {
+    const c = categoriasLista.find(x => x.id_categoria === id);
+    if (!c) return;
+
+    document.getElementById('modal-cat-titulo').innerText  = 'Editar Categoría';
+    document.getElementById('cat-id').value                = c.id_categoria;
+    document.getElementById('cat-nombre').value            = c.nombre;
+    document.getElementById('cat-descripcion').value       = c.descripcion || '';
+    document.getElementById('cat-estado').value            = c.estado;
+    modalCategoria.show();
+}
+
+// Guardar (crear o editar según si hay id)
+async function guardarCategoria() {
+    const id = document.getElementById('cat-id').value;
+
+    const data = {
+        nombre:      document.getElementById('cat-nombre').value,
+        descripcion: document.getElementById('cat-descripcion').value,
+        estado:      document.getElementById('cat-estado').value
+    };
+
+    // Si hay id → editar, si no → crear
+    const url    = id ? `/api/categorias/${id}` : '/api/categorias';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            modalCategoria.hide();
+            cargarCategorias(); // recargar tabla
+        } else {
+            const err = await res.json();
+            alert(err.mensaje || 'Error al guardar');
+        }
+    } catch (error) {
+        alert('Error al guardar categoría');
+    }
+}
+
+// Eliminar categoría
+async function eliminarCategoria(id) {
+    if (!confirm('¿Seguro que deseas eliminar esta categoría?')) return;
+
+    try {
+        const res = await fetch(`/api/categorias/${id}`, { method: 'DELETE' });
+
+        if (res.ok) {
+            cargarCategorias();
+        } else {
+            const err = await res.json();
+            alert(err.mensaje || 'No se puede eliminar');
+        }
+    } catch (error) {
+        alert('Error al eliminar');
+    }
+}
