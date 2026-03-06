@@ -1,10 +1,12 @@
 let modalProducto;
 let productosLista = [];
 
-// Verificar que sea colaborador
+// ============================================================
+// ACCESO
+// ============================================================
 function verificarAcceso() {
     const token = localStorage.getItem('token');
-    const rol = localStorage.getItem('rol');
+    const rol   = localStorage.getItem('rol');
     if (!token || rol !== 'COLABORADOR') {
         window.location.href = '/login.html';
     }
@@ -12,36 +14,36 @@ function verificarAcceso() {
     if (nombre) document.getElementById('nombre-admin').innerText = nombre;
 }
 
-// Mostrar sección
-function mostrarSeccion(seccion) {
-    const secciones = ['inicio', 'pedidos', 'productos', 'clientes','categorias'];
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+function mostrarSeccion(seccion, link) {
+    const secciones = ['inicio', 'pedidos', 'productos', 'clientes', 'categorias', 'animales'];
     secciones.forEach(s => {
         document.getElementById(`seccion-${s}`).classList.add('d-none');
     });
     document.getElementById(`seccion-${seccion}`).classList.remove('d-none');
 
-    // Actualizar título
     const titulos = {
-        inicio: 'Dashboard',
-        pedidos: 'Gestión de Pedidos',
-        productos: 'Inventario de Productos',
-        clientes: 'Clientes Registrados',
-        categorias: 'Categorías de Producto'
+        inicio:      'Dashboard',
+        pedidos:     'Gestión de Pedidos',
+        productos:   'Inventario de Productos',
+        clientes:    'Clientes Registrados',
+        categorias:  'Categorías de Producto',
+        animales:    'Tipos de Animal'
     };
     document.getElementById('titulo-seccion').innerText = titulos[seccion];
 
-    // Actualizar nav activo
     document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
-    event.target.closest('.nav-link').classList.add('active');
+    if (link) link.classList.add('active');
 
-    // Cargar datos según sección
-    if (seccion === 'pedidos') cargarPedidos();
-    if (seccion === 'productos') cargarProductos();
-    if (seccion === 'clientes') cargarClientes();
+    if (seccion === 'pedidos')    cargarPedidos();
+    if (seccion === 'productos')  cargarProductos();
+    if (seccion === 'clientes')   cargarClientes();
     if (seccion === 'categorias') cargarCategorias();
+    if (seccion === 'animales')   cargarAnimales();
 }
 
-// Cerrar sesión
 function cerrarSesion() {
     localStorage.removeItem('token');
     localStorage.removeItem('rol');
@@ -49,44 +51,49 @@ function cerrarSesion() {
     window.location.href = '/login.html';
 }
 
-// Cargar estadísticas
+// ============================================================
+// ESTADÍSTICAS
+// ============================================================
 async function cargarEstadisticas() {
     try {
-        const res = await fetch('/api/dashboard');
+        const res  = await fetch('/api/dashboard');
         const data = await res.json();
-
-        document.getElementById('stat-clientes').innerText = data.clientes;
+        document.getElementById('stat-clientes').innerText   = data.clientes;
         document.getElementById('stat-pendientes').innerText = data.pedidosPendientes;
-        document.getElementById('stat-productos').innerText = data.productos;
-        document.getElementById('stat-stock').innerText = data.stockBajo;
+        document.getElementById('stat-productos').innerText  = data.productos;
+        document.getElementById('stat-stock').innerText      = data.stockBajo;
     } catch (err) {
         console.error('Error cargando estadísticas:', err);
     }
 }
 
-// Color badge estado
+// ============================================================
+// HELPER — color badge estado pedido
+// ============================================================
 function getBadgeEstado(estado) {
     const colores = {
-        'PENDIENTE': 'warning text-dark',
-        'PAGADO': 'info text-dark',
-        'ENVIADO': 'primary',
-        'ENTREGADO': 'success',
-        'CANCELADO': 'danger'
+        'PENDIENTE':  'warning text-dark',
+        'PAGADO':     'info text-dark',
+        'ENVIADO':    'primary',
+        'ENTREGADO':  'success',
+        'CANCELADO':  'danger'
     };
     return colores[estado] || 'secondary';
 }
 
-// Cargar pedidos recientes (inicio)
+// ============================================================
+// PEDIDOS RECIENTES
+// ============================================================
 async function cargarPedidosRecientes() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/pedidos', {
+        const res   = await fetch('/api/pedidos', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
-        const pedidos = await res.json();
+        const pedidos  = await res.json();
         const recientes = pedidos.slice(0, 5);
+        const tbody    = document.getElementById('tabla-pedidos-recientes');
 
-        const tbody = document.getElementById('tabla-pedidos-recientes');
         if (!recientes.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay pedidos</td></tr>';
             return;
@@ -101,31 +108,33 @@ async function cargarPedidosRecientes() {
                 <td><span class="badge bg-${getBadgeEstado(p.estado)}">${p.estado}</span></td>
                 <td>${new Date(p.fecha_pedido).toLocaleDateString('es-PE')}</td>
                 <td>
-                    <select class="form-select form-select-sm" style="width:130px;"
+                    <select class="form-select form-select-sm" style="width:130px"
                             onchange="actualizarEstado(${p.id_pedido}, this.value)">
-                        <option ${p.estado==='PENDIENTE'?'selected':''}>PENDIENTE</option>
-                        <option ${p.estado==='ENVIADO'?'selected':''}>ENVIADO</option>
-                        <option ${p.estado==='ENTREGADO'?'selected':''}>ENTREGADO</option>
-                        <option ${p.estado==='CANCELADO'?'selected':''}>CANCELADO</option>
+                        <option ${p.estado==='PENDIENTE' ?'selected':''}>PENDIENTE</option>
+                        <option ${p.estado==='ENVIADO'   ?'selected':''}>ENVIADO</option>
+                        <option ${p.estado==='ENTREGADO' ?'selected':''}>ENTREGADO</option>
+                        <option ${p.estado==='CANCELADO' ?'selected':''}>CANCELADO</option>
                     </select>
                 </td>
             </tr>
         `).join('');
     } catch (err) {
-        console.error('Error cargando pedidos:', err);
+        console.error('Error cargando pedidos recientes:', err);
     }
 }
 
-// Cargar todos los pedidos
+// ============================================================
+// PEDIDOS
+// ============================================================
 async function cargarPedidos() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/pedidos', {
+        const res   = await fetch('/api/pedidos', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const pedidos = await res.json();
+        const tbody   = document.getElementById('tabla-pedidos');
 
-        const tbody = document.getElementById('tabla-pedidos');
         if (!pedidos.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay pedidos</td></tr>';
             return;
@@ -140,12 +149,12 @@ async function cargarPedidos() {
                 <td><span class="badge bg-${getBadgeEstado(p.estado)}">${p.estado}</span></td>
                 <td>${new Date(p.fecha_pedido).toLocaleDateString('es-PE')}</td>
                 <td>
-                    <select class="form-select form-select-sm" style="width:130px;"
+                    <select class="form-select form-select-sm" style="width:130px"
                             onchange="actualizarEstado(${p.id_pedido}, this.value)">
-                        <option ${p.estado==='PENDIENTE'?'selected':''}>PENDIENTE</option>
-                        <option ${p.estado==='ENVIADO'?'selected':''}>ENVIADO</option>
-                        <option ${p.estado==='ENTREGADO'?'selected':''}>ENTREGADO</option>
-                        <option ${p.estado==='CANCELADO'?'selected':''}>CANCELADO</option>
+                        <option ${p.estado==='PENDIENTE' ?'selected':''}>PENDIENTE</option>
+                        <option ${p.estado==='ENVIADO'   ?'selected':''}>ENVIADO</option>
+                        <option ${p.estado==='ENTREGADO' ?'selected':''}>ENTREGADO</option>
+                        <option ${p.estado==='CANCELADO' ?'selected':''}>CANCELADO</option>
                     </select>
                 </td>
             </tr>
@@ -155,33 +164,29 @@ async function cargarPedidos() {
     }
 }
 
-// Actualizar estado pedido
 async function actualizarEstado(id, estado) {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/dashboard/pedidos/${id}/estado`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ estado })
+        await fetch(`/api/dashboard/pedidos/${id}/estado`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body:    JSON.stringify({ estado })
         });
-        if (res.ok) {
-            cargarEstadisticas();
-        }
+        cargarEstadisticas();
     } catch (err) {
         console.error('Error actualizando estado:', err);
     }
 }
 
-// Cargar productos
+// ============================================================
+// PRODUCTOS
+// ============================================================
 async function cargarProductos() {
     try {
         const res = await fetch('/api/productos');
         productosLista = await res.json();
-
         const tbody = document.getElementById('tabla-productos');
+
         if (!productosLista.length) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay productos</td></tr>';
             return;
@@ -200,7 +205,7 @@ async function cargarProductos() {
                 <td>${p.stock_actual}</td>
                 <td>${stockEstado}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" 
+                    <button class="btn btn-sm btn-outline-primary me-1"
                             onclick="editarProducto(${p.id_producto})">
                         <i class="bi bi-pencil"></i>
                     </button>
@@ -216,7 +221,6 @@ async function cargarProductos() {
     }
 }
 
-// Mostrar modal nuevo producto
 function mostrarModalProducto() {
     document.getElementById('modal-titulo').innerText = 'Nuevo Producto';
     document.getElementById('formProducto').reset();
@@ -224,79 +228,69 @@ function mostrarModalProducto() {
     modalProducto.show();
 }
 
-// Editar producto
 function editarProducto(id) {
     const p = productosLista.find(x => x.id_producto === id);
     if (!p) return;
-
-    document.getElementById('modal-titulo').innerText = 'Editar Producto';
-    document.getElementById('prod-id').value = p.id_producto;
-    document.getElementById('prod-nombre').value = p.nombre;
-    document.getElementById('prod-descripcion').value = p.descripcion || '';
-    document.getElementById('prod-precio').value = p.precio_venta;
-    document.getElementById('prod-stock').value = p.stock_actual;
-    document.getElementById('prod-categoria').value = p.id_categoria;
-    document.getElementById('prod-imagen').value = p.imagen || '';
+    document.getElementById('modal-titulo').innerText    = 'Editar Producto';
+    document.getElementById('prod-id').value             = p.id_producto;
+    document.getElementById('prod-nombre').value         = p.nombre;
+    document.getElementById('prod-descripcion').value    = p.descripcion || '';
+    document.getElementById('prod-precio').value         = p.precio_venta;
+    document.getElementById('prod-stock').value          = p.stock_actual;
+    document.getElementById('prod-categoria').value      = p.id_categoria;
+    document.getElementById('prod-imagen').value         = p.imagen || '';
     modalProducto.show();
 }
 
-// Guardar producto
 async function guardarProducto() {
-    const id = document.getElementById('prod-id').value;
+    const id   = document.getElementById('prod-id').value;
     const data = {
-        nombre: document.getElementById('prod-nombre').value,
-        descripcion: document.getElementById('prod-descripcion').value,
+        nombre:       document.getElementById('prod-nombre').value,
+        descripcion:  document.getElementById('prod-descripcion').value,
         precio_venta: document.getElementById('prod-precio').value,
         stock_actual: document.getElementById('prod-stock').value,
         id_categoria: document.getElementById('prod-categoria').value,
-        imagen: document.getElementById('prod-imagen').value,
+        imagen:       document.getElementById('prod-imagen').value,
         id_tipo_animal: 1,
-        stock_minimo: 5
+        stock_minimo:   5
     };
-
-    const url = id ? `/api/productos/${id}` : '/api/productos';
+    const url    = id ? `/api/productos/${id}` : '/api/productos';
     const method = id ? 'PUT' : 'POST';
-
     try {
         const res = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (res.ok) {
-            modalProducto.hide();
-            cargarProductos();
-            cargarEstadisticas();
-        }
+        if (res.ok) { modalProducto.hide(); cargarProductos(); cargarEstadisticas(); }
+        else alert('Error al guardar producto');
     } catch (err) {
         alert('Error al guardar producto');
     }
 }
 
-// Eliminar producto
 async function eliminarProducto(id) {
     if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
     try {
         const res = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            cargarProductos();
-            cargarEstadisticas();
-        }
+        if (res.ok) { cargarProductos(); cargarEstadisticas(); }
     } catch (err) {
         alert('Error al eliminar producto');
     }
 }
 
-// Cargar clientes
+// ============================================================
+// CLIENTES
+// ============================================================
 async function cargarClientes() {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/clientes', {
+        const res   = await fetch('/api/clientes', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const clientes = await res.json();
+        const tbody    = document.getElementById('tabla-clientes');
 
-        const tbody = document.getElementById('tabla-clientes');
         if (!clientes.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay clientes</td></tr>';
             return;
@@ -317,28 +311,13 @@ async function cargarClientes() {
     }
 }
 
-// Iniciar
-window.addEventListener('DOMContentLoaded', () => {
-    verificarAcceso();
-    modalProducto = new bootstrap.Modal(document.getElementById('modalProducto'));
-    modalCategoria = new bootstrap.Modal(document.getElementById('modalCategoria'));
-    cargarEstadisticas();
-    cargarPedidosRecientes();
-});
-
 // ============================================================
 // CATEGORÍAS
 // ============================================================
-
-let modalCategoria;
-let categoriasLista = [];
-
-// Cargar y mostrar todas las categorías en la tabla
 async function cargarCategorias() {
     try {
         const res = await fetch('/api/categorias');
         categoriasLista = await res.json();
-
         const tbody = document.getElementById('tabla-categorias');
 
         if (!categoriasLista.length) {
@@ -357,38 +336,34 @@ async function cargarCategorias() {
                     </span>
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" 
+                    <button class="btn btn-sm btn-outline-primary me-1"
                             onclick="editarCategoria(${c.id_categoria})">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" 
+                    <button class="btn btn-sm btn-outline-danger"
                             onclick="eliminarCategoria(${c.id_categoria})">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
             </tr>
         `).join('');
-
-    } catch (error) {
-        console.error('Error cargando categorías:', error);
+    } catch (err) {
+        console.error('Error cargando categorías:', err);
     }
 }
 
-// Abrir modal para NUEVA categoría
 function mostrarModalCategoria() {
-    document.getElementById('modal-cat-titulo').innerText = 'Nueva Categoría';
-    document.getElementById('cat-id').value        = '';
-    document.getElementById('cat-nombre').value    = '';
-    document.getElementById('cat-descripcion').value = '';
-    document.getElementById('cat-estado').value    = 'ACTIVO';
+    document.getElementById('modal-cat-titulo').innerText  = 'Nueva Categoría';
+    document.getElementById('cat-id').value                = '';
+    document.getElementById('cat-nombre').value            = '';
+    document.getElementById('cat-descripcion').value       = '';
+    document.getElementById('cat-estado').value            = 'ACTIVO';
     modalCategoria.show();
 }
 
-// Abrir modal para EDITAR categoría
 function editarCategoria(id) {
     const c = categoriasLista.find(x => x.id_categoria === id);
     if (!c) return;
-
     document.getElementById('modal-cat-titulo').innerText  = 'Editar Categoría';
     document.getElementById('cat-id').value                = c.id_categoria;
     document.getElementById('cat-nombre').value            = c.nombre;
@@ -397,53 +372,137 @@ function editarCategoria(id) {
     modalCategoria.show();
 }
 
-// Guardar (crear o editar según si hay id)
 async function guardarCategoria() {
-    const id = document.getElementById('cat-id').value;
-
+    const id   = document.getElementById('cat-id').value;
     const data = {
         nombre:      document.getElementById('cat-nombre').value,
         descripcion: document.getElementById('cat-descripcion').value,
         estado:      document.getElementById('cat-estado').value
     };
-
-    // Si hay id → editar, si no → crear
     const url    = id ? `/api/categorias/${id}` : '/api/categorias';
     const method = id ? 'PUT' : 'POST';
-
     try {
         const res = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-
-        if (res.ok) {
-            modalCategoria.hide();
-            cargarCategorias(); // recargar tabla
-        } else {
-            const err = await res.json();
-            alert(err.mensaje || 'Error al guardar');
-        }
-    } catch (error) {
+        if (res.ok) { modalCategoria.hide(); cargarCategorias(); }
+        else { const err = await res.json(); alert(err.mensaje || 'Error al guardar'); }
+    } catch (err) {
         alert('Error al guardar categoría');
     }
 }
 
-// Eliminar categoría
 async function eliminarCategoria(id) {
     if (!confirm('¿Seguro que deseas eliminar esta categoría?')) return;
-
     try {
         const res = await fetch(`/api/categorias/${id}`, { method: 'DELETE' });
-
-        if (res.ok) {
-            cargarCategorias();
-        } else {
-            const err = await res.json();
-            alert(err.mensaje || 'No se puede eliminar');
-        }
-    } catch (error) {
+        if (res.ok) cargarCategorias();
+        else { const err = await res.json(); alert(err.mensaje || 'No se puede eliminar'); }
+    } catch (err) {
         alert('Error al eliminar');
     }
 }
+
+// ============================================================
+// ANIMALES
+// ============================================================
+async function cargarAnimales() {
+    try {
+        const res = await fetch('/api/animales');
+        animalesLista = await res.json();
+        const tbody = document.getElementById('tabla-animales');
+
+        if (!animalesLista.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay animales</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = animalesLista.map(a => `
+            <tr>
+                <td>${a.id_tipo_animal}</td>
+                <td><strong>${a.nombre}</strong></td>
+                <td>
+                    <span class="badge bg-${a.estado === 'ACTIVO' ? 'success' : 'secondary'}">
+                        ${a.estado}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1"
+                            onclick="editarAnimal(${a.id_tipo_animal})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="eliminarAnimal(${a.id_tipo_animal})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Error cargando animales:', err);
+    }
+}
+
+function mostrarModalAnimal() {
+    document.getElementById('modal-ani-titulo').innerText = 'Nuevo Tipo de Animal';
+    document.getElementById('ani-id').value               = '';
+    document.getElementById('ani-nombre').value           = '';
+    document.getElementById('ani-estado').value           = 'ACTIVO';
+    modalAnimal.show();
+}
+
+function editarAnimal(id) {
+    const a = animalesLista.find(x => x.id_tipo_animal === id);
+    if (!a) return;
+    document.getElementById('modal-ani-titulo').innerText = 'Editar Tipo de Animal';
+    document.getElementById('ani-id').value               = a.id_tipo_animal;
+    document.getElementById('ani-nombre').value           = a.nombre;
+    document.getElementById('ani-estado').value           = a.estado;
+    modalAnimal.show();
+}
+
+async function guardarAnimal() {
+    const id   = document.getElementById('ani-id').value;
+    const data = {
+        nombre: document.getElementById('ani-nombre').value,
+        estado: document.getElementById('ani-estado').value
+    };
+    const url    = id ? `/api/animales/${id}` : '/api/animales';
+    const method = id ? 'PUT' : 'POST';
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) { modalAnimal.hide(); cargarAnimales(); }
+        else { const err = await res.json(); alert(err.mensaje || 'Error al guardar'); }
+    } catch (err) {
+        alert('Error al guardar animal');
+    }
+}
+
+async function eliminarAnimal(id) {
+    if (!confirm('¿Seguro que deseas eliminar este animal?')) return;
+    try {
+        const res = await fetch(`/api/animales/${id}`, { method: 'DELETE' });
+        if (res.ok) cargarAnimales();
+        else { const err = await res.json(); alert(err.mensaje || 'No se puede eliminar'); }
+    } catch (err) {
+        alert('Error al eliminar');
+    }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+    verificarAcceso();
+    modalProducto  = new bootstrap.Modal(document.getElementById('modalProducto'));
+    modalCategoria = new bootstrap.Modal(document.getElementById('modalCategoria'));
+    modalAnimal    = new bootstrap.Modal(document.getElementById('modalAnimal'));
+    cargarEstadisticas();
+    cargarPedidosRecientes();
+});
