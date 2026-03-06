@@ -15,6 +15,7 @@ app.use('/api/auth',      require('./routes/auth.routes.js'));
 app.use('/api/carrito',   require('./routes/carrito.routes.js'));
 app.use('/api/pedidos',   require('./routes/pedido.routes.js'));
 app.use('/api/clientes',  require('./routes/cliente.routes.js'));
+app.use('/api/ubigeo',    require('./routes/ubigeo.routes.js'));
 app.use('/',              require('./routes/dashboard.routes.js'));
 
 const PORT = process.env.PORT || 3000;

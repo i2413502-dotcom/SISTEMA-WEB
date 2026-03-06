@@ -2,9 +2,10 @@ const db = require('../config/db');
 
 exports.obtenerProductos = async (filtros = {}) => {
     let sql = `
-        SELECT p.*, c.nombre AS categoria 
+        SELECT p.*, c.nombre AS categoria, ta.nombre AS tipo_animal
         FROM producto p
         LEFT JOIN categoria_producto c ON p.id_categoria = c.id_categoria
+        LEFT JOIN tipo_animal ta ON p.id_tipo_animal = ta.id_tipo_animal
         WHERE p.estado = 'ACTIVO'
     `;
     const params = [];
@@ -32,9 +33,10 @@ exports.obtenerProductos = async (filtros = {}) => {
 
 exports.obtenerProductoPorId = async (id) => {
     const [rows] = await db.query(
-        `SELECT p.*, c.nombre AS categoria 
+        `SELECT p.*, c.nombre AS categoria, ta.nombre AS tipo_animal
          FROM producto p
          LEFT JOIN categoria_producto c ON p.id_categoria = c.id_categoria
+         LEFT JOIN tipo_animal ta ON p.id_tipo_animal = ta.id_tipo_animal
          WHERE p.id_producto = ?`,
         [id]
     );
@@ -42,25 +44,35 @@ exports.obtenerProductoPorId = async (id) => {
 };
 
 exports.crearProducto = async (data) => {
-    const { nombre, descripcion, imagen, precio_venta, 
-            id_categoria, id_tipo_animal, stock_actual, stock_minimo } = data;
+    const { nombre, descripcion, imagen, precio_venta,
+            id_categoria, id_tipo_animal, stock_actual, 
+            stock_minimo, marca, ficha_tecnica, 
+            colores, composicion, modo_uso, presentacion } = data;
     const [result] = await db.query(
         `INSERT INTO producto 
-         (nombre, descripcion, imagen, precio_venta, id_categoria, 
-          id_tipo_animal, stock_actual, stock_minimo, estado, fecha_creacion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVO', NOW())`,
-        [nombre, descripcion, imagen, precio_venta, 
-         id_categoria, id_tipo_animal, stock_actual, stock_minimo]
+         (nombre, descripcion, imagen, precio_venta, id_categoria,
+          id_tipo_animal, stock_actual, stock_minimo, marca, ficha_tecnica,
+          colores, composicion, modo_uso, presentacion, estado, fecha_creacion)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVO', NOW())`,
+        [nombre, descripcion, imagen, precio_venta, id_categoria,
+         id_tipo_animal, stock_actual, stock_minimo || 5, 
+         marca, ficha_tecnica, colores, composicion, modo_uso, presentacion]
     );
     return result;
 };
 
 exports.actualizarProducto = async (id, data) => {
-    const { nombre, descripcion, precio_venta, stock_actual } = data;
+    const { nombre, descripcion, precio_venta, stock_actual,
+            marca, ficha_tecnica, colores, composicion, 
+            modo_uso, presentacion } = data;
     const [result] = await db.query(
-        `UPDATE producto SET nombre=?, descripcion=?, 
-         precio_venta=?, stock_actual=? WHERE id_producto=?`,
-        [nombre, descripcion, precio_venta, stock_actual, id]
+        `UPDATE producto SET nombre=?, descripcion=?, precio_venta=?, 
+         stock_actual=?, marca=?, ficha_tecnica=?, colores=?,
+         composicion=?, modo_uso=?, presentacion=?
+         WHERE id_producto=?`,
+        [nombre, descripcion, precio_venta, stock_actual,
+         marca, ficha_tecnica, colores, composicion, 
+         modo_uso, presentacion, id]
     );
     return result;
 };

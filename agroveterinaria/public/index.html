@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroVeterinaria</title>
+    <title>AgroVeterinaria ALIVET</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -17,7 +17,7 @@
         .search-input { border-radius: 20px 0 0 20px; border: none; }
         .search-btn { border-radius: 0 20px 20px 0; background: white; color: var(--verde); border: none; }
         .hero-banner {
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
             url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80') center/cover;
             height: 280px; display: flex; align-items: center; justify-content: center;
         }
@@ -35,12 +35,34 @@
         .btn-add:hover { background-color: var(--verde-oscuro); transform: scale(1.1); }
         .footer-agro { background-color: var(--verde-oscuro); color: white; padding: 40px 0; margin-top: 50px; }
         .badge-carrito { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+        .filtro-animal .btn { border-radius: 20px; padding: 6px 16px; font-size: 0.85rem; }
+        .filtro-animal .btn.active { background-color: var(--verde); color: white; border-color: var(--verde); }
+
+        /* Toast notificación */
+        .toast-carrito {
+            position: fixed; bottom: 20px; right: 20px;
+            background: var(--verde); color: white;
+            padding: 12px 20px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999; display: none;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-header .d-flex.w-50 { width: 100% !important; margin: 10px 0; }
+            .main-header .container-fluid { flex-wrap: wrap; }
+        }
     </style>
 </head>
 <body>
 
 <header class="main-header shadow-sm">
-    <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+    <div class="container-fluid px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
         <a href="/" class="text-decoration-none">
             <img src="/img/logo.jpeg" alt="Logo" style="height:80px;">
         </a>
@@ -64,36 +86,67 @@
     <div class="promo-box shadow">
         <h2 class="text-danger fw-bold">VENTA DE PRODUCTOS</h2>
         <p class="mb-0 text-dark fs-5">Cuidamos la salud de tus animales como tú lo harías</p>
-        <p class="mb-0 fs-4">🐶🐄</p>
+        <p class="mb-0 fs-4">🐶🐄🐱🐔</p>
     </div>
 </section>
 
-<main class="container my-5">
+<main class="container my-4">
 
     <!-- FILTROS -->
-    <div class="row mb-4 g-2">
-        <div class="col-md-4">
-            <select id="filtroCategoria" class="form-select">
-                <option value="">Todas las categorías</option>
-                <option value="1">Alimentos</option>
-                <option value="2">Medicamentos</option>
-                <option value="3">Accesorios</option>
-            </select>
+    <div class="card shadow-sm p-3 mb-4 border-0 rounded-15">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small">Categoría</label>
+                <select id="filtroCategoria" class="form-select form-select-sm">
+                    <option value="">Todas las categorías</option>
+                    <option value="1">Alimentos</option>
+                    <option value="2">Medicamentos</option>
+                    <option value="3">Accesorios</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">Precio mín.</label>
+                <input type="number" id="filtroPrecioMin" class="form-control form-control-sm" placeholder="S/. 0">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">Precio máx.</label>
+                <input type="number" id="filtroPrecioMax" class="form-control form-control-sm" placeholder="S/. 999">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm w-100" style="background-color:#06A049;color:white;" onclick="aplicarFiltros()">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-sm btn-outline-secondary w-100" onclick="limpiarFiltros()">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                </button>
+            </div>
         </div>
-        <div class="col-md-3">
-            <input type="number" id="filtroPrecioMin" class="form-control" placeholder="Precio mínimo">
-        </div>
-        <div class="col-md-3">
-            <input type="number" id="filtroPrecioMax" class="form-control" placeholder="Precio máximo">
-        </div>
-        <div class="col-md-2">
-            <button class="btn w-100" style="background-color:#06A049;color:white;" onclick="aplicarFiltros()">
-                <i class="bi bi-funnel"></i> Filtrar
+
+        <!-- Filtro tipo animal -->
+        <div class="filtro-animal d-flex gap-2 mt-3 flex-wrap">
+            <span class="fw-bold small me-2 align-self-center">Animal:</span>
+            <button class="btn btn-outline-success btn-sm active" onclick="filtrarAnimal(0, this)">
+                🐾 Todos
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="filtrarAnimal(1, this)">
+                🐶 Perro
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="filtrarAnimal(2, this)">
+                🐱 Gato
+            </button>
+            <button class="btn btn-outline-success btn-sm" onclick="filtrarAnimal(3, this)">
+                🐔 Ave
             </button>
         </div>
     </div>
 
-    <h3 class="text-success fw-bold mb-4 border-bottom pb-2">Nuestros Productos</h3>
+    <h3 class="text-success fw-bold mb-4 border-bottom pb-2">
+        Nuestros Productos
+        <span id="contador-productos" class="badge bg-success ms-2 fs-6">0</span>
+    </h3>
+
     <div class="row g-4" id="lista-productos">
         <div class="text-center py-5">
             <div class="spinner-border text-success" role="status"></div>
@@ -107,8 +160,8 @@
         <div class="row">
             <div class="col-md-4 mb-3">
                 <h5 class="fw-bold border-bottom pb-2">CONTÁCTANOS</h5>
-                <p><i class="bi bi-telephone-fill me-2"></i> 954 800 966</p>
-                <p><i class="bi bi-envelope-fill me-2"></i> contacto@agroventa.com</p>
+                <p><i class="bi bi-telephone-fill me-2"></i>954 800 966</p>
+                <p><i class="bi bi-envelope-fill me-2"></i>contacto@agroventa.com</p>
             </div>
             <div class="col-md-4 mb-3">
                 <h5 class="fw-bold border-bottom pb-2">DIRECCIÓN</h5>
@@ -121,6 +174,12 @@
         </div>
     </div>
 </footer>
+
+<!-- Toast notificación carrito -->
+<div class="toast-carrito" id="toastCarrito">
+    <i class="bi bi-cart-check me-2"></i>
+    <span id="toast-mensaje">Producto agregado al carrito</span>
+</div>
 
 <script src="/js/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

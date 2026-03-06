@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - AgroVeterinaria</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body {
             background-color: #f0f4f1;
@@ -13,10 +14,13 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', sans-serif;
+            padding: 20px 0;
         }
-        .card-registro { border-radius: 15px; width: 450px; }
+        .card-registro { border-radius: 15px; width: 500px; }
         .btn-agro { background-color: #06A049; color: white; }
         .btn-agro:hover { background-color: #047a37; color: white; }
+        .field-readonly { background-color: #f8f9fa; }
+        .spinner-border-sm { width: 1rem; height: 1rem; }
     </style>
 </head>
 <body>
@@ -28,10 +32,49 @@
     </div>
 
     <form id="registroForm">
+
+        <!-- Tipo y número de documento -->
+        <div class="row mb-3">
+            <div class="col-5">
+                <label class="form-label fw-bold">Tipo documento</label>
+                <select class="form-select" id="tipoDocumento" required onchange="cambiarTipoDoc()">
+                    <option value="">Seleccione...</option>
+                    <option value="DNI">DNI</option>
+                    <option value="RUC">RUC</option>
+                </select>
+            </div>
+            <div class="col-7">
+                <label class="form-label fw-bold">Número de documento</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="numeroDocumento" 
+                           placeholder="Ingresa tu documento" required>
+                    <button type="button" class="btn btn-outline-success" 
+                            onclick="consultarDocumento()" id="btn-consultar">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <small id="doc-estado" class="mt-1 d-block"></small>
+            </div>
+        </div>
+
+        <!-- Nombres y apellidos (se autocompletan) -->
         <div class="mb-3">
-            <label class="form-label fw-bold">Nombre completo</label>
+            <label class="form-label fw-bold">Nombres</label>
             <input type="text" class="form-control" id="nombres" 
-                   placeholder="Ej: Juan Pérez" required>
+                   placeholder="Se completará automáticamente" required>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-6">
+                <label class="form-label fw-bold">Apellido Paterno</label>
+                <input type="text" class="form-control" id="apellidoPaterno" 
+                       placeholder="Apellido paterno" required>
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bold">Apellido Materno</label>
+                <input type="text" class="form-control" id="apellidoMaterno" 
+                       placeholder="Apellido materno" required>
+            </div>
         </div>
 
         <div class="mb-3">
@@ -40,41 +83,28 @@
                    placeholder="usuario@correo.com" required>
         </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Tipo de documento</label>
-                <select class="form-select" id="tipoDocumento" required>
-                    <option value="">Seleccione...</option>
-                    <option value="DNI">DNI</option>
-                    <option value="RUC">RUC</option>
-                </select>
+        <div class="row mb-3">
+            <div class="col-6">
+                <label class="form-label fw-bold">Contraseña</label>
+                <input type="password" class="form-control" id="password" 
+                       placeholder="Mínimo 6 caracteres" required minlength="6">
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label fw-bold">Número de documento</label>
-                <input type="text" class="form-control" id="numeroDocumento" 
-                       placeholder="Ej: 12345678" required>
+            <div class="col-6">
+                <label class="form-label fw-bold">Confirmar contraseña</label>
+                <input type="password" class="form-control" id="confirmarPassword" 
+                       placeholder="Repite tu contraseña" required>
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label fw-bold">Contraseña</label>
-            <input type="password" class="form-control" id="password" 
-                   placeholder="Mínimo 6 caracteres" required minlength="6">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label fw-bold">Confirmar contraseña</label>
-            <input type="password" class="form-control" id="confirmarPassword" 
-                   placeholder="Repite tu contraseña" required>
-        </div>
-
-        <button type="submit" class="btn btn-agro w-100 mb-3">
-            Registrarse
+        <button type="submit" class="btn btn-agro w-100 mb-3 py-2">
+            <i class="bi bi-person-plus me-2"></i>Registrarse
         </button>
     </form>
 
     <p class="text-center mt-2">
-        <a href="/login.html" class="text-success">¿Ya tienes cuenta? Inicia sesión</a>
+        <a href="/login.html" class="text-success">
+            <i class="bi bi-arrow-left me-1"></i>¿Ya tienes cuenta? Inicia sesión
+        </a>
     </p>
 
     <div id="mensaje" class="alert d-none mt-2"></div>

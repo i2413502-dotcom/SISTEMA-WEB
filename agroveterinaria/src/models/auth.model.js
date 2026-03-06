@@ -21,11 +21,12 @@ const findColaborador = async (idPersona) => {
     return rows[0];
 };
 
-const createPersona = async ({ nombres, correo, password }) => {
+const createPersona = async ({ nombres, apellidoPaterno, apellidoMaterno, correo, password }) => {
     const [result] = await db.query(
-        `INSERT INTO persona (nombres, correo, password, estado, fecha_creacion) 
-         VALUES (?, ?, ?, 'ACTIVO', NOW())`,
-        [nombres, correo, password]
+        `INSERT INTO persona 
+         (nombres, apellido_paterno, apellido_materno, correo, password, estado, fecha_creacion) 
+         VALUES (?, ?, ?, ?, ?, 'ACTIVO', NOW())`,
+        [nombres, apellidoPaterno, apellidoMaterno, correo, password]
     );
     return result.insertId;
 };
@@ -37,10 +38,23 @@ const createCliente = async (idPersona, idTipoDocumento, numeroDocumento) => {
     );
 };
 
-module.exports = { 
-    findByEmail, 
-    findCliente, 
-    findColaborador, 
-    createPersona, 
-    createCliente 
+const findPersonaById = async (id) => {
+    const [rows] = await db.query(
+        `SELECT p.*, c.numero_documento, c.id_tipo_documento, td.nombre AS tipo_documento
+         FROM persona p
+         LEFT JOIN cliente c ON p.id_persona = c.id_persona
+         LEFT JOIN tipo_documento td ON c.id_tipo_documento = td.id_tipo_documento
+         WHERE p.id_persona = ?`,
+        [id]
+    );
+    return rows[0];
+};
+
+module.exports = {
+    findByEmail,
+    findCliente,
+    findColaborador,
+    createPersona,
+    createCliente,
+    findPersonaById
 };

@@ -21,6 +21,11 @@
         .paso.activo { background: var(--verde); color: white; }
         .linea { flex: 1; height: 3px; background: #ddd; }
         .linea.activa { background: var(--verde); }
+        .costo-envio-badge {
+            background: #e8f5e9; border: 2px solid var(--verde);
+            border-radius: 10px; padding: 10px 15px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -38,7 +43,7 @@
 <main class="container my-4">
 
     <!-- PASOS -->
-    <div class="d-flex align-items-center justify-content-center mb-5 gap-2">
+    <div class="d-flex align-items-center justify-content-center mb-3 gap-2">
         <div class="paso activo">1</div>
         <div class="linea activa"></div>
         <div class="paso activo">2</div>
@@ -64,36 +69,59 @@
                 </h5>
 
                 <form id="envioForm">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nombre completo</label>
-                        <input type="text" class="form-control" id="nombreEnvio" required>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nombre completo</label>
+                            <input type="text" class="form-control" id="nombreEnvio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono"
+                                   placeholder="Ej: 987654321" required
+                                   pattern="[0-9]{9}" maxlength="9">
+                        </div>
+                    </div>
+
+                    <!-- UBIGEO -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Departamento</label>
+                            <select class="form-select" id="departamento" required 
+                                    onchange="cargarProvincias()">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Provincia</label>
+                            <select class="form-select" id="provincia" required 
+                                    onchange="cargarDistritos()" disabled>
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Distrito</label>
+                            <select class="form-select" id="distrito" required 
+                                    onchange="actualizarCostoEnvio()" disabled>
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Costo de envío -->
+                    <div class="costo-envio-badge mb-3" id="costo-envio-badge">
+                        <i class="bi bi-truck me-2 text-success"></i>
+                        <strong>Costo de envío:</strong>
+                        <span class="text-success fw-bold fs-5 ms-2" id="costo-envio-texto">S/. 0.00</span>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Teléfono</label>
-                        <input type="tel" class="form-control" id="telefono" 
-                               placeholder="Ej: 987654321" required
-                               pattern="[0-9]{9}" title="Ingresa 9 dígitos">
+                        <label class="form-label fw-bold">Dirección exacta</label>
+                        <input type="text" class="form-control" id="direccion"
+                               placeholder="Ej: Jr. Lima 123, Piso 2" required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Dirección de entrega</label>
-                        <input type="text" class="form-control" id="direccion" 
-                               placeholder="Ej: Av. Lima 123, Piso 2" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Zona de entrega</label>
-                        <select class="form-select" id="zona" required onchange="actualizarCostoEnvio()">
-                            <option value="">Seleccione una zona...</option>
-                            <option value="1" data-costo="5.00">Zona Centro - S/. 5.00</option>
-                            <option value="2" data-costo="8.00">Zona Norte - S/. 8.00</option>
-                            <option value="3" data-costo="10.00">Zona Sur - S/. 10.00</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Referencias</label>
+                        <label class="form-label fw-bold">Referencias <span class="text-muted fw-normal">(opcional)</span></label>
                         <textarea class="form-control" id="referencias" rows="2"
                                   placeholder="Ej: Casa de color azul, frente al parque"></textarea>
                     </div>
@@ -102,6 +130,10 @@
                         Continuar al comprobante
                         <i class="bi bi-arrow-right ms-2"></i>
                     </button>
+
+                    <a href="/carrito.html" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left me-2"></i>Volver al carrito
+                    </a>
                 </form>
             </div>
         </div>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - AgroVeterinaria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root { --verde: #06A049; --verde-oscuro: #047a37; }
+        body { background-color: #f0f4f1; font-family: 'Segoe UI', sans-serif; }
+        .main-header { background-color: var(--verde); padding: 10px 0; }
+        .badge-carrito { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+        .avatar { width: 100px; height: 100px; border-radius: 50%; background: var(--verde); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+        .nav-perfil .nav-link { color: #333; border-radius: 10px; padding: 10px 15px; }
+        .nav-perfil .nav-link.active { background: var(--verde); color: white; }
+        .nav-perfil .nav-link:hover { background: #e8f5e9; }
+        .card-perfil { border-radius: 15px; border: none; }
+        .btn-agro { background-color: var(--verde); color: white; }
+        .btn-agro:hover { background-color: var(--verde-oscuro); color: white; }
+        .badge-estado { padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<header class="main-header shadow-sm">
+    <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+        <a href="/" class="text-decoration-none">
+            <img src="/img/logo.jpeg" alt="Logo" style="height:70px;">
+        </a>
+        <div class="d-flex gap-4 align-items-center">
+            <a href="/carrito.html" class="text-white position-relative">
+                <i class="bi bi-cart3 fs-4"></i>
+                <span id="cart-count" class="badge-carrito">0</span>
+            </a>
+            <a href="/" class="text-white">
+                <i class="bi bi-house fs-4"></i>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="container my-4">
+    <div class="row g-4">
+
+        <!-- SIDEBAR PERFIL -->
+        <div class="col-md-3">
+            <div class="card card-perfil shadow-sm p-4 text-center">
+                <div class="avatar mb-3">
+                    <i class="bi bi-person-fill text-white" style="font-size:3rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-0" id="perfil-nombre">Cargando...</h5>
+                <p class="text-muted small" id="perfil-correo"></p>
+                <span class="badge bg-success mb-3">Cliente</span>
+
+                <ul class="nav flex-column nav-perfil text-start">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="mostrarSeccion('datos')">
+                            <i class="bi bi-person me-2"></i>Mis datos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="mostrarSeccion('pedidos')">
+                            <i class="bi bi-bag me-2"></i>Mis pedidos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="mostrarSeccion('password')">
+                            <i class="bi bi-lock me-2"></i>Cambiar contraseña
+                        </a>
+                    </li>
+                    <li class="nav-item mt-2">
+                        <a class="nav-link text-danger" href="#" onclick="cerrarSesion()">
+                            <i class="bi bi-box-arrow-left me-2"></i>Cerrar sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CONTENIDO -->
+        <div class="col-md-9">
+
+            <!-- DATOS PERSONALES -->
+            <div id="seccion-datos">
+                <div class="card card-perfil shadow-sm p-4">
+                    <h5 class="fw-bold text-success mb-4">
+                        <i class="bi bi-person me-2"></i>Mis Datos Personales
+                    </h5>
+                    <form id="formDatos">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nombres</label>
+                                <input type="text" class="form-control" id="datos-nombres">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Apellido Paterno</label>
+                                <input type="text" class="form-control" id="datos-apellido-paterno">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Apellido Materno</label>
+                                <input type="text" class="form-control" id="datos-apellido-materno">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Teléfono</label>
+                                <input type="tel" class="form-control" id="datos-telefono" maxlength="9">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Correo electrónico</label>
+                                <input type="email" class="form-control" id="datos-correo" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Documento</label>
+                                <input type="text" class="form-control" id="datos-documento" readonly>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-agro px-4">
+                            <i class="bi bi-save me-2"></i>Guardar cambios
+                        </button>
+                    </form>
+                    <div id="mensaje-datos" class="alert d-none mt-3"></div>
+                </div>
+            </div>
+
+            <!-- MIS PEDIDOS -->
+            <div id="seccion-pedidos" class="d-none">
+                <div class="card card-perfil shadow-sm p-4">
+                    <h5 class="fw-bold text-success mb-4">
+                        <i class="bi bi-bag me-2"></i>Mis Pedidos
+                    </h5>
+                    <div id="lista-pedidos">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-success"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CAMBIAR CONTRASEÑA -->
+            <div id="seccion-password" class="d-none">
+                <div class="card card-perfil shadow-sm p-4">
+                    <h5 class="fw-bold text-success mb-4">
+                        <i class="bi bi-lock me-2"></i>Cambiar Contraseña
+                    </h5>
+                    <form id="formPassword" style="max-width:400px;">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contraseña actual</label>
+                            <input type="password" class="form-control" id="pass-actual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nueva contraseña</label>
+                            <input type="password" class="form-control" id="pass-nueva" 
+                                   required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Confirmar nueva contraseña</label>
+                            <input type="password" class="form-control" id="pass-confirmar" required>
+                        </div>
+                        <button type="submit" class="btn btn-agro px-4">
+                            <i class="bi bi-lock me-2"></i>Cambiar contraseña
+                        </button>
+                    </form>
+                    <div id="mensaje-password" class="alert d-none mt-3"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script src="/js/perfil.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
