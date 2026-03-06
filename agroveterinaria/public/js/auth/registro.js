@@ -1,13 +1,3 @@
-document.getElementById('registroForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const nombres = document.getElementById('nombres').value.trim();
-    const correo = document.getElementById('correo').value.trim();
-    const tipoDocumento = document.getElementById('tipoDocumento').value;
-    const numeroDocumento = document.getElementById('numeroDocumento').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const confirmarPassword = document.getElementById('confirmarPassword').value.trim();
-    const mensaje = document.getElementById('mensaje');
 function cambiarTipoDoc() {
     const tipo = document.getElementById('tipoDocumento').value;
     const numDoc = document.getElementById('numeroDocumento');
@@ -127,83 +117,6 @@ document.getElementById('registroForm').addEventListener('submit', async (e) => 
                 password,
                 tipoDocumento,
                 numeroDocumento
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            mensaje.textContent = data.mensaje;
-            mensaje.className = 'alert alert-danger';
-            mensaje.classList.remove('d-none');
-            return;
-        }
-
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('rol', data.rol);
-        localStorage.setItem('nombre', data.nombre);
-
-        mensaje.textContent = 'Registro exitoso! Redirigiendo...';
-        mensaje.className = 'alert alert-success';
-        mensaje.classList.remove('d-none');
-
-        setTimeout(() => {
-            const redirect = localStorage.getItem('redirectAfterLogin');
-            if (redirect === 'envio') {
-                localStorage.removeItem('redirectAfterLogin');
-                window.location.href = '/envio.html';
-            } else {
-                window.location.href = '/';
-            }
-        }, 1500);
-
-    } catch (err) {
-        mensaje.textContent = 'Error al conectar con el servidor';
-        mensaje.className = 'alert alert-danger';
-        mensaje.classList.remove('d-none');
-    }
-});
-    mensaje.classList.add('d-none');
-
-    // Validaciones
-    if (password !== confirmarPassword) {
-        mensaje.textContent = 'Las contraseñas no coinciden';
-        mensaje.className = 'alert alert-danger';
-        mensaje.classList.remove('d-none');
-        return;
-    }
-
-    if (!tipoDocumento) {
-        mensaje.textContent = 'Selecciona un tipo de documento';
-        mensaje.className = 'alert alert-danger';
-        mensaje.classList.remove('d-none');
-        return;
-    }
-
-    if (tipoDocumento === 'DNI' && numeroDocumento.length !== 8) {
-        mensaje.textContent = 'El DNI debe tener 8 dígitos';
-        mensaje.className = 'alert alert-danger';
-        mensaje.classList.remove('d-none');
-        return;
-    }
-
-    if (tipoDocumento === 'RUC' && numeroDocumento.length !== 11) {
-        mensaje.textContent = 'El RUC debe tener 11 dígitos';
-        mensaje.className = 'alert alert-danger';
-        mensaje.classList.remove('d-none');
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/auth/registro', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                nombres, 
-                correo, 
-                password, 
-                tipoDocumento, 
-                numeroDocumento 
             })
         });
 

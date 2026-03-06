@@ -1,194 +1,206 @@
-let subtotalProductos = 0;
-let costoEnvioActual = 0;
-let distritoActual = null;
+let perfilData = null;
+
+function actualizarContadorCarrito() {
+    const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+    const total = carrito.reduce((sum, i) => sum + i.cantidad, 0);
+    const badge = document.getElementById('cart-count');
+    if (badge) badge.innerText = total;
+}
 
 function verificarLogin() {
     const token = localStorage.getItem('token');
-    if (!token) {
-        localStorage.setItem('redirectAfterLogin', 'envio');
+    const rol = localStorage.getItem('rol');
+    if (!token || rol !== 'CLIENTE') {
         window.location.href = '/login.html';
     }
 }
 
-function cargarResumen() {
-    const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+function mostrarSeccion(seccion) {
+    const secciones = ['datos', 'pedidos', 'password'];
+    secciones.forEach(s => {
+        document.getElementById(`seccion-${s}`).classList.add('d-none');
+    });
+    document.getElementById(`seccion-${seccion}`).classList.remove('d-none');
 
-    if (carrito.length === 0) {
-        window.location.href = '/';
-        return;
+    document.querySelectorAll('.nav-perfil .nav-link').forEach(l => l.classList.remove('active'));
+    event.target.closest('.nav-link').classList.add('active');
+
+    if (seccion === 'pedidos') cargarPedidos();
+}
+
+function cerrarSesion() {
+    localStorage.clear();
+    window.location.href = '/login.html';
+}
+
+async function cargarPerfil() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('/api/auth/perfil', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        perfilData = await res.json();
+
+        // Header
+        document.getElementById('perfil-nombre').innerText =
+            `${perfilData.nombres} ${perfilData.apellido_paterno || ''}`;
+        document.getElementById('perfil-correo').innerText = perfilData.correo;
+
+        // Formulario datos
+        document.getElementById('datos-nombres').value = perfilData.nombres || '';
+        document.getElementById('datos-apellido-paterno').value = perfilData.apellido_paterno || '';
+        document.getElementById('datos-apellido-materno').value = perfilData.apellido_materno || '';
+        document.getElementById('datos-telefono').value = perfilData.telefono || '';
+        document.getElementById('datos-correo').value = perfilData.correo || '';
+        document.getElementById('datos-documento').value =
+            `${perfilData.tipo_documento || ''}: ${perfilData.numero_documento || ''}`;
+
+    } catch (err) {
+        console.error('Error cargando perfil:', err);
     }
+}
 
-    const container = document.getElementById('resumen-items');
-    subtotalProductos = 0;
+async function cargarPedidos() {
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('/api/pedidos/mispedidos', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const pedidos = await res.json();
+        const container = document.getElementById('lista-pedidos');
 
-    container.innerHTML = carrito.map(item => {
-        const precio = parseFloat(item.precio) || 0;
-        const cantidad = parseInt(item.cantidad) || 1;
-        const itemSubtotal = precio * cantidad;
-        subtotalProductos += itemSubtotal;
-        return `
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <div>
-                <span class="fw-bold">${item.nombre}</span>
-                <small class="text-muted d-block">x${cantidad} unidades</small>
+        if (!pedidos.length) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-bag-x" style="font-size:3rem;"></i>
+                    <h5 class="mt-3">No tienes pedidos aún</h5>
+                    <a href="/" class="btn btn-agro mt-2">Ver productos</a>
+                </div>`;
+            return;
+        }
+
+        const colores = {
+            'PENDIENTE': 'warning text-dark',
+            'ENVIADO': 'primary',
+            'ENTREGADO': 'success',
+            'CANCELADO': 'danger'
+        };
+
+        container.innerHTML = pedidos.map(p => `
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h6 class="fw-bold mb-0">Pedido #${p.id_pedido}</h6>
+                            <small class="text-muted">
+                                ${new Date(p.fecha_pedido).toLocaleDateString('es-PE')}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-${colores[p.estado] || 'secondary'} badge-estado">
+                                ${p.estado}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">${p.tipo_comprobante || ''}</span>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <h5 class="fw-bold text-success mb-0">
+                                S/. ${parseFloat(p.total).toFixed(2)}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <span class="text-success fw-bold">S/. ${itemSubtotal.toFixed(2)}</span>
-        </div>`;
-    }).join('');
+        `).join('');
 
-    document.getElementById('resumen-subtotal').innerText = 'S/. ' + subtotalProductos.toFixed(2);
-    document.getElementById('resumen-total').innerText = 'S/. ' + subtotalProductos.toFixed(2);
-
-    // Prellenar datos del usuario logueado
-    const nombre = localStorage.getItem('nombre');
-    if (nombre) document.getElementById('nombreEnvio').value = nombre;
-}
-
-// Cargar departamentos
-async function cargarDepartamentos() {
-    try {
-        const res = await fetch('/api/ubigeo/departamentos');
-        const departamentos = await res.json();
-        const select = document.getElementById('departamento');
-        departamentos.forEach(d => {
-            const option = document.createElement('option');
-            option.value = d.id_departamento;
-            option.text = d.nombre;
-            select.appendChild(option);
-        });
     } catch (err) {
-        console.error('Error cargando departamentos:', err);
+        console.error('Error cargando pedidos:', err);
     }
 }
 
-// Cargar provincias
-async function cargarProvincias() {
-    const idDepartamento = document.getElementById('departamento').value;
-    const selectProvincia = document.getElementById('provincia');
-    const selectDistrito = document.getElementById('distrito');
-
-    selectProvincia.innerHTML = '<option value="">Seleccione...</option>';
-    selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
-    selectProvincia.disabled = true;
-    selectDistrito.disabled = true;
-
-    if (!idDepartamento) return;
-
-    try {
-        const res = await fetch(`/api/ubigeo/provincias/${idDepartamento}`);
-        const provincias = await res.json();
-        provincias.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id_provincia;
-            option.text = p.nombre;
-            selectProvincia.appendChild(option);
-        });
-        selectProvincia.disabled = false;
-    } catch (err) {
-        console.error('Error cargando provincias:', err);
-    }
-}
-
-// Cargar distritos
-async function cargarDistritos() {
-    const idProvincia = document.getElementById('provincia').value;
-    const selectDistrito = document.getElementById('distrito');
-
-    selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
-    selectDistrito.disabled = true;
-
-    if (!idProvincia) return;
-
-    try {
-        const res = await fetch(`/api/ubigeo/distritos/${idProvincia}`);
-        const distritos = await res.json();
-        distritos.forEach(d => {
-            const option = document.createElement('option');
-            option.value = d.id_distrito;
-            option.text = d.nombre;
-            option.setAttribute('data-costo', d.costo_envio);
-            selectDistrito.appendChild(option);
-        });
-        selectDistrito.disabled = false;
-    } catch (err) {
-        console.error('Error cargando distritos:', err);
-    }
-}
-
-// Actualizar costo de envío
-function actualizarCostoEnvio() {
-    const selectDistrito = document.getElementById('distrito');
-    const opcion = selectDistrito.options[selectDistrito.selectedIndex];
-
-    if (!selectDistrito.value) return;
-
-    costoEnvioActual = parseFloat(opcion.getAttribute('data-costo')) || 5.00;
-    distritoActual = {
-        id: selectDistrito.value,
-        nombre: opcion.text,
-        costo: costoEnvioActual
-    };
-
-    // Mostrar badge
-    const badge = document.getElementById('costo-envio-badge');
-    badge.style.display = 'block';
-    document.getElementById('costo-envio-texto').innerText = 'S/. ' + costoEnvioActual.toFixed(2);
-
-    // Actualizar resumen
-    document.getElementById('resumen-envio').innerText = 'S/. ' + costoEnvioActual.toFixed(2);
-    document.getElementById('resumen-envio').classList.remove('text-muted');
-    document.getElementById('resumen-envio').classList.add('text-success', 'fw-bold');
-
-    const total = subtotalProductos + costoEnvioActual;
-    document.getElementById('resumen-total').innerText = 'S/. ' + total.toFixed(2);
-}
-
-document.getElementById('envioForm').addEventListener('submit', (e) => {
+// Guardar datos personales
+document.getElementById('formDatos').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    const mensaje = document.getElementById('mensaje-datos');
 
-    const nombre = document.getElementById('nombreEnvio').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const direccion = document.getElementById('direccion').value.trim();
-    const referencias = document.getElementById('referencias').value.trim();
+    try {
+        const res = await fetch('/api/auth/actualizar-perfil', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                nombres: document.getElementById('datos-nombres').value.trim(),
+                apellido_paterno: document.getElementById('datos-apellido-paterno').value.trim(),
+                apellido_materno: document.getElementById('datos-apellido-materno').value.trim(),
+                telefono: document.getElementById('datos-telefono').value.trim()
+            })
+        });
 
-    const depSelect = document.getElementById('departamento');
-    const provSelect = document.getElementById('provincia');
-    const distSelect = document.getElementById('distrito');
+        const data = await res.json();
+        mensaje.textContent = data.mensaje;
+        mensaje.className = `alert ${res.ok ? 'alert-success' : 'alert-danger'}`;
+        mensaje.classList.remove('d-none');
 
-    if (!distSelect.value) {
-        alert('Por favor selecciona un distrito');
+        if (res.ok) {
+            localStorage.setItem('nombre', document.getElementById('datos-nombres').value.trim());
+        }
+
+    } catch (err) {
+        mensaje.textContent = 'Error al guardar cambios';
+        mensaje.className = 'alert alert-danger';
+        mensaje.classList.remove('d-none');
+    }
+});
+
+// Cambiar contraseña
+document.getElementById('formPassword').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const mensaje = document.getElementById('mensaje-password');
+
+    const passNueva = document.getElementById('pass-nueva').value;
+    const passConfirmar = document.getElementById('pass-confirmar').value;
+
+    if (passNueva !== passConfirmar) {
+        mensaje.textContent = 'Las contraseñas no coinciden';
+        mensaje.className = 'alert alert-danger';
+        mensaje.classList.remove('d-none');
         return;
     }
 
-    if (!distritoActual) {
-        alert('Por favor selecciona un distrito válido');
-        return;
+    try {
+        const res = await fetch('/api/auth/cambiar-password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                passwordActual: document.getElementById('pass-actual').value,
+                passwordNueva: passNueva
+            })
+        });
+
+        const data = await res.json();
+        mensaje.textContent = data.mensaje;
+        mensaje.className = `alert ${res.ok ? 'alert-success' : 'alert-danger'}`;
+        mensaje.classList.remove('d-none');
+
+        if (res.ok) document.getElementById('formPassword').reset();
+
+    } catch (err) {
+        mensaje.textContent = 'Error al cambiar contraseña';
+        mensaje.className = 'alert alert-danger';
+        mensaje.classList.remove('d-none');
     }
-
-    const depNombre = depSelect.options[depSelect.selectedIndex].text;
-    const provNombre = provSelect.options[provSelect.selectedIndex].text;
-    const distNombre = distSelect.options[distSelect.selectedIndex].text;
-
-    const datosEnvio = {
-        nombre,
-        telefono,
-        direccion,
-        referencias,
-        id_distrito: distritoActual.id,
-        nombre_distrito: distNombre,
-        nombre_provincia: provNombre,
-        nombre_departamento: depNombre,
-        direccion_completa: `${direccion}, ${distNombre}, ${provNombre}, ${depNombre}`,
-        costo_envio: costoEnvioActual,
-        total: subtotalProductos + costoEnvioActual
-    };
-
-    localStorage.setItem('datosEnvio', JSON.stringify(datosEnvio));
-    window.location.href = '/comprobante.html';
 });
 
 window.addEventListener('DOMContentLoaded', () => {
     verificarLogin();
-    cargarResumen();
-    cargarDepartamentos();
+    cargarPerfil();
+    actualizarContadorCarrito();
 });
