@@ -51,6 +51,7 @@ app.use('/api/clientes',      require('./routes/cliente.routes.js'));
 app.use('/api/ubigeo',        require('./routes/ubigeo.routes.js'));
 app.use('/api/colaboradores', require('./routes/colaborador.routes.js'));
 app.use('/',                  require('./routes/dashboard.routes.js'));
+app.use('/api/inventario', require('./routes/inventario.routes.js'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
