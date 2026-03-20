@@ -1,3 +1,5 @@
+const { enviarNotificacion } = require('../services/notificacion.service');
+
 const pedidoModel = require('../models/pedido.model');
 const jwt         = require('jsonwebtoken');
 const db          = require('../config/db');
@@ -34,6 +36,11 @@ exports.crearPedido = async (req, res) => {
         await pedidoModel.crearPago(id_pedido, id_tipo_pago, datosEnvio.total, codigoTransaccion);
         const comprobante  = await pedidoModel.crearComprobante(id_pedido, datosComprobante.tipo);
         const pedidoCompleto = await pedidoModel.obtenerPedidoCompleto(id_pedido);
+        await enviarNotificacion(
+    '🛒 Nuevo pedido recibido',
+    `Pedido #${id_pedido} de ${pedidoCompleto.cliente_nombre} por S/. ${pedidoCompleto.total}`,
+    { tipo: 'nuevo_pedido', id_pedido: String(id_pedido) }
+);
 
         res.status(201).json({ mensaje: 'Pedido creado exitosamente', id_pedido, comprobante, pedido: pedidoCompleto });
 

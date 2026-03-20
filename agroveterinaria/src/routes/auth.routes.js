@@ -8,5 +8,6 @@ router.get('/consultar-documento', authController.consultarDocumento);
 router.get('/perfil', authController.getPerfil);
 router.put('/actualizar-perfil',    authController.actualizarPerfil);
 router.put('/cambiar-password',     authController.cambiarPassword);
+router.post('/fcm-token', authController.guardarFcmToken);
 
 module.exports = router;

@@ -232,4 +232,22 @@ const cambiarPassword = async (req, res) => {
     }
 };
 
-module.exports = { login, register, consultarDocumento, getPerfil, actualizarPerfil, cambiarPassword };
+const guardarFcmToken = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ mensaje: 'No autorizado' });
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { fcm_token } = req.body;
+
+        await db.query(
+            'UPDATE colaborador SET fcm_token = ? WHERE id_persona = ?',
+            [fcm_token, decoded.id]
+        );
+        res.json({ mensaje: 'Token FCM guardado' });
+    } catch (err) {
+        res.status(500).json({ mensaje: 'Error al guardar token FCM' });
+    }
+};
+
+module.exports = { login, register, consultarDocumento, getPerfil, actualizarPerfil, cambiarPassword, guardarFcmToken };

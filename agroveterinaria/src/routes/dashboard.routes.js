@@ -8,5 +8,6 @@ router.get('/api/dashboard/productos-vendidos',ctrl.getProductosMasVendidos);
 router.get('/api/dashboard/stock',             ctrl.getStockProductos);
 router.get('/api/pedidos',                     ctrl.getPedidos);
 router.put('/api/pedidos/:id/estado',          ctrl.actualizarEstadoPedido);
+router.get('/api/pedidos/:id', ctrl.getDetallePedido);
 
 module.exports = router;

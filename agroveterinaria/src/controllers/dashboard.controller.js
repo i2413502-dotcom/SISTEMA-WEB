@@ -52,3 +52,15 @@ exports.actualizarEstadoPedido = async (req, res) => {
         res.status(500).json({ mensaje: "Error al actualizar estado" });
     }
 };
+exports.getDetallePedido = async (req, res) => {
+    try {
+        const pedidoModel = require('../models/pedido.model');
+        const pedido = await pedidoModel.obtenerPedidoCompleto(req.params.id);
+        if (!pedido) return res.status(404).json({ mensaje: 'Pedido no encontrado' });
+        res.json(pedido);
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al obtener pedido' });
+    }
+
+};
+

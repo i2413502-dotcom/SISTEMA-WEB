@@ -44,19 +44,30 @@ exports.obtenerProductoPorId = async (id) => {
 };
 
 exports.crearProducto = async (data) => {
-    const { nombre, descripcion, imagen, precio_venta,
-            id_categoria, id_tipo_animal, stock_actual, 
-            stock_minimo, marca, ficha_tecnica, 
-            colores, composicion, modo_uso, presentacion } = data;
+    const {
+        nombre, descripcion, imagen, precio_venta,
+        id_categoria, id_tipo_animal, stock_actual,
+        stock_minimo, codigo_barra, fecha_vencimiento
+    } = data;
+
     const [result] = await db.query(
         `INSERT INTO producto 
          (nombre, descripcion, imagen, precio_venta, id_categoria,
-          id_tipo_animal, stock_actual, stock_minimo, marca, ficha_tecnica,
-          colores, composicion, modo_uso, presentacion, estado, fecha_creacion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVO', NOW())`,
-        [nombre, descripcion, imagen, precio_venta, id_categoria,
-         id_tipo_animal, stock_actual, stock_minimo || 5, 
-         marca, ficha_tecnica, colores, composicion, modo_uso, presentacion]
+          id_tipo_animal, stock_actual, stock_minimo, codigo_barra,
+          fecha_vencimiento, estado, fecha_creacion)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVO', NOW())`,
+        [
+            nombre,
+            descripcion  || null,
+            imagen       || null,
+            precio_venta,
+            id_categoria,
+            id_tipo_animal,
+            stock_actual,
+            stock_minimo || 5,
+            codigo_barra || null,
+            fecha_vencimiento || null
+        ]
     );
     return result;
 };

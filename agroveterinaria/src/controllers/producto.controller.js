@@ -1,4 +1,5 @@
 const Producto = require('../models/producto.model');
+const db = require('../config/db');
 
 exports.listar = async (req, res) => {
     try {
@@ -24,11 +25,31 @@ exports.obtenerPorId = async (req, res) => {
 
 exports.crear = async (req, res) => {
     try {
-        const result = await Producto.crearProducto(req.body);
-        res.status(201).json({ message: "Producto creado", id: result.insertId });
-    } catch (err) {
-        console.error("Error en crear producto:", err);
-        res.status(500).json({ mensaje: "Error al crear producto" });
+        const imagen = req.file ? req.file.filename : null;
+
+        const result = await Producto.crearProducto({
+            nombre:            req.body.nombre,
+            descripcion:       req.body.descripcion       || null,
+            imagen,
+            precio_venta:      req.body.precio_venta,
+            id_categoria:      req.body.id_categoria,
+            id_tipo_animal:    req.body.id_tipo_animal,
+            stock_actual:      req.body.stock_actual,
+            stock_minimo:      req.body.stock_minimo      || 5,
+            codigo_barra:      req.body.codigo_barra      || null,
+            fecha_vencimiento: req.body.fecha_vencimiento || null,
+        });
+
+        res.json({
+            mensaje: 'Producto creado correctamente',
+            id: result.insertId
+        });
+    } catch (error) {
+        console.error('Error en crear producto:', error);
+        res.status(500).json({
+            mensaje: 'Error al crear producto',
+            error: error.message
+        });
     }
 };
 
