@@ -53,5 +53,48 @@ app.use('/api/colaboradores', require('./routes/colaborador.routes.js'));
 app.use('/',                  require('./routes/dashboard.routes.js'));
 app.use('/api/inventario', require('./routes/inventario.routes.js'));
 
+// ── Registro de token FCM ─────────────────────────────────────
+app.post('/api/notificaciones/registrar-token', async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ mensaje: 'Token requerido' });
+        await require('./config/db').query(
+            `INSERT INTO fcm_tokens (token, activo) VALUES (?, 1)
+             ON DUPLICATE KEY UPDATE activo = 1, actualizado_at = NOW()`,
+            [token]
+        );
+        res.json({ mensaje: 'Token registrado correctamente' });
+    } catch (err) {
+        res.status(500).json({ mensaje: 'Error al registrar token' });
+    }
+});
+
+// ── Historial de notificaciones (para el dashboard) ────────────
+app.get('/api/notificaciones', async (req, res) => {
+    try {
+        const db = require('./config/db');
+        const [rows] = await db.query(
+            'SELECT * FROM notificaciones ORDER BY creado_at DESC LIMIT 50'
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ mensaje: 'Error al obtener notificaciones' });
+    }
+});
+
+// ── Marcar notificación como leída ─────────────────────────────
+app.put('/api/notificaciones/:id/leer', async (req, res) => {
+    try {
+        const db = require('./config/db');
+        await db.query(
+            'UPDATE notificaciones SET leida = 1 WHERE id = ?',
+            [req.params.id]
+        );
+        res.json({ mensaje: 'Marcada como leída' });
+    } catch (err) {
+        res.status(500).json({ mensaje: 'Error' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
