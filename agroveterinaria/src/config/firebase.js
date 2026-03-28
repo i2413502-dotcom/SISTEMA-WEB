@@ -6,7 +6,7 @@
 //});
 
 //module.exports = admin;
-
+//holaaa
 // Firebase desactivado temporalmente
 // Se activa cuando tengas el serviceAccountKey.json
 module.exports = null;const admin = require('firebase-admin');
