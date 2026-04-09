@@ -2,6 +2,8 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authModel = require('../models/auth.model');
+const API_PERU_TOKEN = 'b4b56f8c96dcb22d915e4e446b797da7bd9ea4387ff2aa10755f12454c92d10f';
+const BASE_URL = 'https://apiperu.dev/api';
 
 const login = async (req, res) => {
     try {
@@ -63,6 +65,8 @@ const register = async (req, res) => {
             password: hash 
         });
 
+        
+
         const idTipoDoc = tipoDocumento === 'RUC' ? 2 : 1;
         await authModel.createCliente(idPersona, idTipoDoc, numeroDocumento);
 
@@ -96,36 +100,48 @@ const consultarDocumento = async (req, res) => {
             // Simulación API RENIEC
             // En producción usar: https://api.apis.net.pe/v1/dni?numero=
             try {
-                const response = await fetch(`https://api.apis.net.pe/v1/dni?numero=${numero}`, {
-                    headers: { 'Authorization': 'Bearer apis-token-dev' }
+                const response = await fetch(`${BASE_URL}/dni?numero=${numero}`, {
+                   method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${API_PERU_TOKEN}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
                 });
                 const data = await response.json();
 
-                if (data.nombres) {
-                    return res.json({
-                        success: true,
-                        nombres: data.nombres,
-                        apellidoPaterno: data.apellidoPaterno,
-                        apellidoMaterno: data.apellidoMaterno
-                    });
-                } else {
-                    // Si la API falla, permitir ingreso manual
-                    return res.json({
-                        success: false,
-                        mensaje: 'No se encontró el DNI, ingresa tus datos manualmente'
-                    });
-                }
+               if (data.success && data.data) {
+            const persona = data.data;
+            return res.json({
+                success: true,
+                nombres: persona.nombres,
+                apellidoPaterno: persona.apellido_paterno,
+                apellidoMaterno: persona.apellido_materno,
+                nombreCompleto: persona.nombre_completo
+            });
+        } else {
+            return res.json({
+                success: false,
+                mensaje: 'No se encontró el DNI, ingresa tus datos manualmente'
+            });
+        }
+
             } catch (err) {
                 return res.json({
                     success: false,
-                    mensaje: 'Servicio no disponible, ingresa tus datos manualmente'
+                    mensaje: 'Servicio de DNI no disponible'
                 });
             }
 
         } else if (tipo === 'RUC') {
             try {
-                const response = await fetch(`https://api.apis.net.pe/v1/ruc?numero=${numero}`, {
-                    headers: { 'Authorization': 'Bearer apis-token-dev' }
+                const response = await fetch(`${BASE_URL}/ruc?numero=${numero}`, {
+                   method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${API_PERU_TOKEN}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
                 });
                 const data = await response.json();
 
@@ -179,6 +195,59 @@ const getPerfil = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ mensaje: 'Error al obtener perfil' });
+    }
+};
+
+const getDatosEnvio = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ mensaje: 'No autorizado' });
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const [rows] = await db.query(
+            `SELECT per.nombres, per.apellido_paterno, per.apellido_materno,
+                    per.telefono, per.correo,
+                    cli.numero_documento, td.nombre AS tipo_documento,
+                    cli.direccion_habitual, cli.referencia_habitual
+             FROM persona per
+             JOIN cliente cli ON cli.id_persona = per.id_persona
+             LEFT JOIN tipo_documento td ON cli.id_tipo_documento = td.id_tipo_documento
+             WHERE per.id_persona = ?`,
+            [decoded.id]
+        );
+
+        if (!rows.length) return res.status(404).json({ mensaje: 'Cliente no encontrado' });
+        res.json(rows[0]);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ mensaje: 'Error al obtener datos' });
+    }
+};
+
+const guardarDireccionHabitual = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ mensaje: 'No autorizado' });
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { direccion, referencia } = req.body;
+
+        const [clienteRows] = await db.query(
+            'SELECT id_cliente FROM cliente WHERE id_persona = ?', [decoded.id]
+        );
+        if (!clienteRows.length) return res.status(404).json({ mensaje: 'Cliente no encontrado' });
+
+        await db.query(
+            'UPDATE cliente SET direccion_habitual = ?, referencia_habitual = ? WHERE id_persona = ?',
+            [direccion || null, referencia || null, decoded.id]
+        );
+
+        res.json({ mensaje: 'Dirección guardada' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ mensaje: 'Error al guardar dirección' });
     }
 };
 
@@ -250,4 +319,4 @@ const guardarFcmToken = async (req, res) => {
     }
 };
 
-module.exports = { login, register, consultarDocumento, getPerfil, actualizarPerfil, cambiarPassword, guardarFcmToken };
+module.exports = { login, register, consultarDocumento, getPerfil, getDatosEnvio, guardarDireccionHabitual, actualizarPerfil, cambiarPassword, guardarFcmToken };

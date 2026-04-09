@@ -332,7 +332,6 @@
 <!-- ════════════════════════════════════════════
      MODALES
 ════════════════════════════════════════════ -->
-
 <!-- MODAL PRODUCTO -->
 <div class="modal fade" id="modalProducto" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -404,7 +403,152 @@
                     </div>
                     <input type="hidden" id="prod-imagen-final">
                 </div>
-            </div>
+
+                <!-- CAMPOS MEDICAMENTO -->
+                <div id="campos-medicamento" style="display:none">
+                    <hr class="my-2">
+                    <p class="fw-bold text-muted small mb-2">
+                        <i class="bi bi-clipboard2-pulse me-1"></i>DATOS DEL MEDICAMENTO
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Marca</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-marca-med" placeholder="Ej: Bayer, PetCare...">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Presentación</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-presentacion" placeholder="Ej: Caja x 10 tabletas, 30ml...">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control form-control-sm"
+                                    id="prod-vencimiento" min="">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Composición</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-composicion" placeholder="Ej: Ivermectina 1%...">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-bold small">Modo de Uso</label>
+                            <textarea class="form-control form-control-sm" id="prod-modo-uso"
+                                      rows="2" placeholder="Ej: Administrar 1 tableta cada 8 horas..."></textarea>
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-bold small">
+                                <i class="bi bi-file-earmark-pdf me-1 text-danger"></i>Ficha Técnica (PDF en Google Drive)
+                            </label>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                <input type="url" id="prod-ficha-tecnica"
+                                       class="form-control form-control-sm"
+                                       placeholder="Pega aquí el enlace de Google Drive del PDF...">
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        onclick="verFichaTecnica()">
+                                    <i class="bi bi-eye"></i> Ver
+                                </button>
+                            </div>
+                            <div id="ficha-preview" class="d-none mt-1">
+                                <a id="ficha-link" href="#" target="_blank"
+                                   class="btn btn-sm btn-danger w-100">
+                                    <i class="bi bi-file-earmark-pdf-fill me-1"></i>Abrir Ficha Técnica en Drive
+                                </a>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Sube el PDF a la carpeta <strong>"Fichas Tecnicas Agroveterinaria"</strong> en Drive
+                                → clic derecho → <strong>"Compartir enlace"</strong> → copia y pega aquí.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAMPOS ACCESORIO -->
+                <div id="campos-accesorio" style="display:none">
+                    <hr class="my-2">
+                    <p class="fw-bold text-muted small mb-2">
+                        <i class="bi bi-tags me-1"></i>ATRIBUTOS DEL ACCESORIO
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Marca</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-marca-acc" placeholder="Ej: Kong, Trixie...">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Colores disponibles</label>
+                            <div class="d-flex gap-1 flex-wrap mb-1" id="colores-tags"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="color-nuevo" class="form-control"
+                                       placeholder="Ej: Rojo"
+                                       onkeydown="if(event.key==='Enter'){agregarTag('color');event.preventDefault();}">
+                                <button class="btn btn-outline-secondary" type="button"
+                                        onclick="agregarTag('color')">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="prod-colores">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Tallas disponibles</label>
+                            <div class="d-flex gap-1 flex-wrap mb-1" id="tallas-tags"></div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="talla-nueva" class="form-control"
+                                       placeholder="Ej: S, M, L, XL"
+                                       onkeydown="if(event.key==='Enter'){agregarTag('talla');event.preventDefault();}">
+                                <button class="btn btn-outline-secondary" type="button"
+                                        onclick="agregarTag('talla')">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="prod-tallas">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Especificaciones</label>
+                            <textarea class="form-control form-control-sm" id="prod-ficha-acc"
+                                      rows="3" placeholder="Ej: Material, dimensiones..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAMPOS ALIMENTO -->
+                <div id="campos-alimento" style="display:none">
+                    <hr class="my-2">
+                    <p class="fw-bold text-muted small mb-2">
+                        <i class="bi bi-egg-fried me-1"></i>INFORMACIÓN DEL ALIMENTO
+                    </p>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Marca</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-marca-ali" placeholder="Ej: Purina, Royal Canin...">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Peso / Presentación</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-peso-ali" placeholder="Ej: 1kg, 5kg, 500g...">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   id="prod-vencimiento-ali" min="">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Composición</label>
+                            <input type="text" class="form-control form-control-sm"
+                                   id="prod-composicion-ali" placeholder="Ej: Pollo, arroz, vitaminas...">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label class="form-label fw-bold small">Información Nutricional</label>
+                            <textarea class="form-control form-control-sm" id="prod-ficha-ali"
+                                      rows="2" placeholder="Ej: Proteína 28%, Grasa 15%..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- fin modal-body -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success" onclick="guardarProducto()">
@@ -414,6 +558,9 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL CATEGORIA -->
+
 
 <!-- MODAL CATEGORIA -->
 <div class="modal fade" id="modalCategoria" tabindex="-1">

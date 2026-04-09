@@ -103,14 +103,21 @@ exports.obtenerDetallePedido = async (req, res) => {
 
         const pedido = pedidoRows[0];
 
-        const [detalles] = await db.query(`
-            SELECT dp.*, pr.nombre AS producto_nombre, pr.imagen
-            FROM detalle_pedido dp
-            JOIN producto pr ON dp.id_producto = pr.id_producto
-            WHERE dp.id_pedido = ?
-        `, [req.params.id]);
+const [detalles] = await db.query(`
+    SELECT dp.*, pr.nombre AS producto_nombre, pr.imagen,
+           pr.marca AS marca_producto
+    FROM detalle_pedido dp
+    JOIN producto pr ON dp.id_producto = pr.id_producto
+    WHERE dp.id_pedido = ?
+`, [req.params.id]);
 
-        res.json({ ...pedido, detalles });
+// ✅ Usar marca del detalle si existe, sino la del producto
+const detallesConMarca = detalles.map(d => ({
+    ...d,
+    marca: d.marca || d.marca_producto || null
+}));
+
+res.json({ ...pedido, detalles: detallesConMarca });
     } catch (err) {
         console.error(err);
         res.status(500).json({ mensaje: 'Error al obtener detalle del pedido' });

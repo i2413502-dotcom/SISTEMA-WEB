@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════
 //  VARIABLES GLOBALES
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 let modalProducto, modalCategoria, modalAnimal, modalColaborador;
 let productosLista = [], categoriasLista = [], animalesLista = [], colaboradoresLista = [];
 let chartVentas = null, chartProductos = null, chartStock = null;
@@ -309,6 +309,11 @@ async function cargarProductos() {
                 <td>${stockEstado}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary me-1" onclick="editarProducto(${p.id_producto})">
+                        ${p.ficha_tecnica ? `
+<a href="${convertirUrlDrive(p.ficha_tecnica)}" target="_blank"
+   class="btn btn-sm btn-outline-danger ms-1" title="Ver Ficha Técnica">
+    <i class="bi bi-file-earmark-pdf"></i>
+</a>` : ''}
                         <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarProducto(${p.id_producto})">
@@ -331,8 +336,17 @@ async function mostrarModalProducto() {
     document.getElementById('prod-imagen-url').value  = '';
     document.getElementById('prod-imagen-final').value= '';
     document.getElementById('preview-container').classList.add('d-none');
+    document.getElementById('prod-categoria')?.addEventListener('change', actualizarCamposCategoria);
     await cargarSelectCategorias();
     await cargarSelectAnimales();
+    limpiarTags();
+    actualizarCamposCategoria();
+    // Establecer fecha mínima de hoy en los inputs de fecha
+const hoyStr = new Date().toISOString().split('T')[0];
+const venc    = document.getElementById('prod-vencimiento');
+const vencAli = document.getElementById('prod-vencimiento-ali');
+if (venc)    venc.setAttribute('min', hoyStr);
+if (vencAli) vencAli.setAttribute('min', hoyStr);
     modalProducto.show();
 }
 
@@ -375,62 +389,210 @@ function previsualizarImagen(input) {
 async function editarProducto(id) {
     const p = productosLista.find(x => x.id_producto === id);
     if (!p) return;
+
     await cargarSelectCategorias();
     await cargarSelectAnimales();
-    document.getElementById('modal-titulo').innerText      = 'Editar Producto';
-    document.getElementById('prod-id').value               = p.id_producto;
-    document.getElementById('prod-nombre').value           = p.nombre;
-    document.getElementById('prod-descripcion').value      = p.descripcion || '';
-    document.getElementById('prod-precio').value           = p.precio_venta;
-    document.getElementById('prod-stock').value            = p.stock_actual;
-    document.getElementById('prod-categoria').value        = p.id_categoria;
-    document.getElementById('prod-animal').value           = p.id_tipo_animal;
-    document.getElementById('prod-imagen-url').value       = p.imagen || '';
-    document.getElementById('prod-imagen-final').value     = p.imagen || '';
+
+    document.getElementById('modal-titulo').innerText       = 'Editar Producto';
+    document.getElementById('prod-id').value                = p.id_producto;
+    document.getElementById('prod-nombre').value            = p.nombre;
+    document.getElementById('prod-descripcion').value       = p.descripcion || '';
+    document.getElementById('prod-precio').value            = p.precio_venta;
+    document.getElementById('prod-stock').value             = p.stock_actual;
+    document.getElementById('prod-categoria').value         = p.id_categoria;
+    document.getElementById('prod-animal').value            = p.id_tipo_animal;
+    document.getElementById('prod-imagen-url').value        = p.imagen || '';
+    document.getElementById('prod-imagen-final').value      = p.imagen || '';
     document.getElementById('preview-container').classList.add('d-none');
+
+    // Mostrar campos dinámicos según categoría
+    actualizarCamposCategoria();
+
+    // ✅ FIX: cargar valores de campos de medicamento
+    const elMarca      = document.getElementById('prod-marca-med');
+    const elPresent    = document.getElementById('prod-presentacion');
+    const elVenc       = document.getElementById('prod-vencimiento');
+    const elComp       = document.getElementById('prod-composicion');
+    const elModoUso    = document.getElementById('prod-modo-uso');
+    const elFicha      = document.getElementById('prod-ficha-tecnica');
+    if (elMarca)   elMarca.value   = p.marca        || '';
+    if (elPresent) elPresent.value = p.presentacion || '';
+    if (elVenc && p.fecha_vencimiento) {
+        elVenc.value = new Date(p.fecha_vencimiento).toISOString().split('T')[0];
+    }
+    if (elComp)    elComp.value    = p.composicion   || '';
+    if (elModoUso) elModoUso.value = p.modo_uso      || '';
+    if (elFicha)   elFicha.value   = p.ficha_tecnica || '';
+
+    // ✅ FIX: cargar valores de campos de accesorio
+    const elMarcaAcc = document.getElementById('prod-marca-acc');
+    const elFichaAcc = document.getElementById('prod-ficha-acc');
+    if (elMarcaAcc) elMarcaAcc.value = p.marca        || '';
+    if (elFichaAcc) elFichaAcc.value = p.ficha_tecnica || '';
+
+    // ✅ FIX: cargar valores de campos de alimento
+    const elMarcaAli = document.getElementById('prod-marca-ali');
+    const elPesoAli  = document.getElementById('prod-peso-ali');
+    const elVencAli  = document.getElementById('prod-vencimiento-ali');
+    const elCompAli  = document.getElementById('prod-composicion-ali');
+    const elFichaAli = document.getElementById('prod-ficha-ali');
+    if (elMarcaAli) elMarcaAli.value = p.marca        || '';
+    if (elPesoAli)  elPesoAli.value  = p.presentacion || '';
+    if (elVencAli && p.fecha_vencimiento) {
+        elVencAli.value = new Date(p.fecha_vencimiento).toISOString().split('T')[0];
+    }
+    if (elCompAli)  elCompAli.value  = p.composicion   || '';
+    if (elFichaAli) elFichaAli.value = p.ficha_tecnica || '';
+
+    // ✅ Cargar tags de colores y tallas
+    if (p.colores) cargarTags('color', p.colores);
+    if (p.tallas)  cargarTags('talla', p.tallas);
+
+    // Mostrar preview de ficha técnica si ya tiene URL
+const fichaUrl = p.ficha_tecnica || '';
+const fichaPreview = document.getElementById('ficha-preview');
+const fichaLink    = document.getElementById('ficha-link');
+if (fichaUrl && fichaPreview && fichaLink) {
+    fichaLink.href = convertirUrlDrive(fichaUrl);
+    fichaPreview.classList.remove('d-none');
+} else if (fichaPreview) {
+    fichaPreview.classList.add('d-none');
+}
+
+// Establecer fecha mínima de hoy en los inputs de fecha
+const hoyStr = new Date().toISOString().split('T')[0];
+const venc    = document.getElementById('prod-vencimiento');
+const vencAli = document.getElementById('prod-vencimiento-ali');
+if (venc)    venc.setAttribute('min', hoyStr);
+if (vencAli) vencAli.setAttribute('min', hoyStr);
+
     modalProducto.show();
 }
 
 async function guardarProducto() {
-    const id = document.getElementById('prod-id').value;
+    const id  = document.getElementById('prod-id').value;
+    const sel = document.getElementById('prod-categoria');
+    const txt = (sel.options[sel.selectedIndex]?.text || '').toLowerCase();
 
-    // Subir imagen si eligieron archivo
+    const esMed = txt.includes('medic') || txt.includes('farmac');
+    const esAcc = txt.includes('acces') || txt.includes('collar') || txt.includes('juguete');
+    const esAli = txt.includes('aliment') || txt.includes('comida') || txt.includes('nutrici');
+
+    // Subir imagen si se seleccionó archivo
     const fileInput = document.getElementById('prod-imagen-file');
     let imagenFinal = document.getElementById('prod-imagen-url').value.trim();
-
     if (fileInput.files.length > 0) {
         const formData = new FormData();
         formData.append('imagen', fileInput.files[0]);
-        const upRes  = await fetch('/api/upload/imagen-producto', { method:'POST', body: formData });
+        const upRes  = await fetch('/api/upload/imagen-producto', { method: 'POST', body: formData });
         const upData = await upRes.json();
         if (upData.nombre) imagenFinal = upData.nombre;
     }
 
     const data = {
-        nombre:         document.getElementById('prod-nombre').value,
-        descripcion:    document.getElementById('prod-descripcion').value,
-        precio_venta:   document.getElementById('prod-precio').value,
-        stock_actual:   document.getElementById('prod-stock').value,
-        id_categoria:   document.getElementById('prod-categoria').value,
-        id_tipo_animal: document.getElementById('prod-animal').value,
-        imagen:         imagenFinal,
-        stock_minimo:   5
+        nombre:            document.getElementById('prod-nombre').value,
+        descripcion:       document.getElementById('prod-descripcion').value,
+        precio_venta:      document.getElementById('prod-precio').value,
+        stock_actual:      document.getElementById('prod-stock').value,
+        id_categoria:      document.getElementById('prod-categoria').value,
+        id_tipo_animal:    document.getElementById('prod-animal').value,
+        imagen:            imagenFinal,
+        stock_minimo:      5,
+
+        // ✅ FIX: cada categoría lee su propio campo de marca
+        marca: esMed ? document.getElementById('prod-marca-med')?.value || null
+             : esAcc ? document.getElementById('prod-marca-acc')?.value || null
+             : esAli ? document.getElementById('prod-marca-ali')?.value || null
+             : null,
+
+        peso_presentacion: esMed ? document.getElementById('prod-presentacion')?.value  || null
+                         : esAli ? document.getElementById('prod-peso-ali')?.value       || null
+                         : null,
+
+        fecha_vencimiento: esMed ? document.getElementById('prod-vencimiento')?.value   || null
+                         : esAli ? document.getElementById('prod-vencimiento-ali')?.value || null
+                         : null,
+
+        composicion: esMed ? document.getElementById('prod-composicion')?.value         || null
+                   : esAli ? document.getElementById('prod-composicion-ali')?.value     || null
+                   : null,
+
+        modo_uso: esMed ? document.getElementById('prod-modo-uso')?.value || null : null,
+
+        ficha_tecnica: esMed ? document.getElementById('prod-ficha-tecnica')?.value     || null
+                     : esAcc ? document.getElementById('prod-ficha-acc')?.value         || null
+                     : esAli ? document.getElementById('prod-ficha-ali')?.value         || null
+                     : null,
+
+        // ✅ FIX: colores y tallas siempre desde sus inputs (solo se envían si es accesorio)
+        colores: esAcc ? document.getElementById('prod-colores')?.value || null : null,
+        tallas:  esAcc ? document.getElementById('prod-tallas')?.value  || null : null,
     };
+
+    // Validar fecha de vencimiento — no permitir fechas pasadas
+const fechaVenc = esMed ? document.getElementById('prod-vencimiento')?.value
+                : esAli ? document.getElementById('prod-vencimiento-ali')?.value
+                : null;
+if (fechaVenc) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaIngresada = new Date(fechaVenc);
+    if (fechaIngresada < hoy) {
+        alert('⚠️ La fecha de vencimiento no puede ser una fecha pasada.');
+        return;
+    }
+}
 
     const url    = id ? `/api/productos/${id}` : '/api/productos';
     const method = id ? 'PUT' : 'POST';
+
     try {
-        const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
         if (res.ok) {
             modalProducto.hide();
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            limpiarTags();
             cargarProductos();
             cargarEstadisticas();
             cargarGraficoStock();
         } else {
-            alert('Error al guardar producto');
+            const e = await res.json();
+            alert(e.mensaje || 'Error al guardar producto');
         }
-    } catch (err) { alert('Error al guardar producto'); }
+    } catch (err) {
+        alert('Error al guardar producto: ' + err.message);
+    }
+} 
+ 
+// Buscar ficha técnica en internet (Wikipedia)
+async function buscarFicha() {
+    const nombre = document.getElementById('prod-buscar-ficha').value.trim();
+    if (!nombre) return alert('Escribe el nombre del medicamento');
+
+    try {
+        const res  = await fetch(`/api/productos/buscar-ficha?nombre=${encodeURIComponent(nombre)}`);
+        const data = await res.json();
+
+        if (data.encontrado && data.resumen) {
+            document.getElementById('prod-ficha-tecnica').value = data.resumen;
+            document.getElementById('ficha-fuente').innerHTML =
+                `Fuente: <a href="${data.url}" target="_blank">Wikipedia</a> — puedes editar el texto`;
+        } else {
+            alert('No se encontró información automática. Puedes escribirla manualmente.');
+        }
+    } catch (err) {
+        alert('Error al buscar. Escribe la ficha manualmente.');
+    }
 }
+
+
+// Agregar listener al selector de categoría
+document.getElementById('prod-categoria')?.addEventListener('change', actualizarCamposCategoria);
 
 async function eliminarProducto(id) {
     if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
@@ -544,6 +706,103 @@ async function eliminarCategoria(id) {
     } catch (err) { alert('Error al eliminar'); }
 }
 
+// ── Mostrar campos según categoría ─────────────────────────────
+function actualizarCamposCategoria() {
+    const sel   = document.getElementById('prod-categoria');
+    const texto = (sel.options[sel.selectedIndex]?.text || '').toLowerCase();
+
+    const esMed = texto.includes('medic') || texto.includes('farmac');
+    const esAcc = texto.includes('acces') || texto.includes('collar') || texto.includes('juguete');
+    const esAli = texto.includes('aliment') || texto.includes('comida') || texto.includes('nutrici');
+
+    document.getElementById('campos-medicamento').style.display = esMed ? 'block' : 'none';
+    document.getElementById('campos-accesorio').style.display   = esAcc ? 'block' : 'none';
+    document.getElementById('campos-alimento').style.display    = esAli ? 'block' : 'none';
+}
+
+// ── Sistema de tags para colores y tallas ──────────────────────
+function agregarTag(tipo) {
+    const inputId  = tipo === 'color' ? 'color-nuevo'  : 'talla-nueva';
+    const tagsId   = tipo === 'color' ? 'colores-tags'  : 'tallas-tags';
+    const hiddenId = tipo === 'color' ? 'prod-colores'  : 'prod-tallas';
+    const color    = tipo === 'color' ? '#e8f5e9' : '#e3f2fd';
+    const textColor = tipo === 'color' ? '#2e7d32' : '#1565c0';
+
+    const input = document.getElementById(inputId);
+    const valor = input.value.trim();
+    if (!valor) return;
+
+    const tag = document.createElement('span');
+    tag.style.cssText = `background:${color};color:${textColor};border-radius:20px;
+        padding:2px 10px;font-size:12px;cursor:pointer;display:inline-flex;
+        align-items:center;gap:4px;border:1px solid ${textColor}40`;
+    tag.innerHTML = `${valor} <i class="bi bi-x" onclick="eliminarTag(this, '${hiddenId}')"></i>`;
+    tag.dataset.valor = valor;
+
+    document.getElementById(tagsId).appendChild(tag);
+    input.value = '';
+    sincronizarHidden(hiddenId, tagsId);
+}
+
+function eliminarTag(btn, hiddenId) {
+    const tagsId = hiddenId === 'prod-colores' ? 'colores-tags' : 'tallas-tags';
+    btn.parentElement.remove();
+    sincronizarHidden(hiddenId, tagsId);
+}
+
+function sincronizarHidden(hiddenId, tagsId) {
+    const tags   = document.querySelectorAll(`#${tagsId} span`);
+    const valores = Array.from(tags).map(t => t.dataset.valor).join(',');
+    document.getElementById(hiddenId).value = valores;
+}
+
+function limpiarTags() {
+    ['colores-tags','tallas-tags'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+    const hc = document.getElementById('prod-colores');
+    const ht = document.getElementById('prod-tallas');
+    if (hc) hc.value = '';
+    if (ht) ht.value = '';
+}
+
+function cargarTags(tipo, valores) {
+    if (!valores) return;
+    valores.split(',').forEach(v => {
+        const inputId = tipo === 'color' ? 'color-nuevo' : 'talla-nueva';
+        document.getElementById(inputId).value = v.trim();
+        agregarTag(tipo);
+    });
+}
+
+// ── Buscar ficha técnica en Wikipedia ─────────────────────────
+function verFichaTecnica() {
+    const url = document.getElementById('prod-ficha-tecnica').value.trim();
+    if (!url) return alert('Primero pega el enlace de Google Drive');
+
+    // Convertir enlace de Drive a enlace de vista previa si es necesario
+    const urlFinal = convertirUrlDrive(url);
+
+    const preview = document.getElementById('ficha-preview');
+    const link    = document.getElementById('ficha-link');
+    link.href     = urlFinal;
+    preview.classList.remove('d-none');
+    window.open(urlFinal, '_blank');
+}
+
+function convertirUrlDrive(url) {
+    // Si es enlace de compartir Drive, convertir a enlace directo de vista
+    // https://drive.google.com/file/d/ID/view → https://drive.google.com/file/d/ID/view
+    // https://drive.google.com/open?id=ID     → https://drive.google.com/file/d/ID/view
+    const matchOpen = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (matchOpen) {
+        return `https://drive.google.com/file/d/${matchOpen[1]}/view`;
+    }
+    // Si ya es formato /file/d/ID/... dejarlo como está
+    return url;
+}
+
 // ═══════════════════════════════════════════════════
 //  ANIMALES
 // ═══════════════════════════════════════════════════
@@ -604,21 +863,45 @@ async function guardarAnimal() {
     const url    = id ? `/api/animales/${id}` : '/api/animales';
     const method = id ? 'PUT' : 'POST';
     try {
-        const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-        if (res.ok) { modalAnimal.hide(); cargarAnimales(); }
-        else { const e = await res.json(); alert(e.mensaje || 'Error al guardar'); }
-    } catch (err) { alert('Error al guardar animal'); }
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            // Cerrar modal limpiamente
+            modalAnimal.hide();
+            // Limpiar residuos del modal que bloquean la UI
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            // Recargar lista
+            await cargarAnimales();
+        } else {
+            const e = await res.json();
+            alert(e.mensaje || 'Error al guardar');
+        }
+    } catch (err) {
+        alert('Error al guardar animal');
+    }
 }
 
 async function eliminarAnimal(id) {
     if (!confirm('¿Seguro que deseas eliminar este animal?')) return;
     try {
-        const res = await fetch(`/api/animales/${id}`, { method:'DELETE' });
-        if (res.ok) cargarAnimales();
-        else { const e = await res.json(); alert(e.mensaje || 'No se puede eliminar'); }
-    } catch (err) { alert('Error al eliminar'); }
+        const res = await fetch(`/api/animales/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            await cargarAnimales();
+        } else {
+            const e = await res.json();
+            alert(e.mensaje || 'No se puede eliminar');
+        }
+    } catch (err) {
+        alert('Error al eliminar');
+    }
 }
-
 // ═══════════════════════════════════════════════════
 //  COLABORADORES
 // ═══════════════════════════════════════════════════

@@ -208,23 +208,32 @@ async function toggleDetalle(idPedido, card) {
         }
 
         productosDiv.innerHTML = data.detalles.map(item => {
-            const imgSrc = item.imagen
-                ? (item.imagen.startsWith('http') ? item.imagen : `/img/productos/${item.imagen}`)
-                : '/img/logo.jpeg';
-            return `
-            <div class="prod-item">
-                <img src="${imgSrc}" alt="${item.producto_nombre}" class="prod-img">
-                <div class="flex-grow-1">
-                    <div class="fw-bold small">${item.producto_nombre}</div>
-                    <div class="text-muted small">
-                        ${item.cantidad} x S/. ${parseFloat(item.precio_unitario).toFixed(2)}
-                    </div>
-                </div>
-                <div class="text-success fw-bold small">
-                    S/. ${parseFloat(item.subtotal).toFixed(2)}
-                </div>
-            </div>`;
-        }).join('') + `
+    const imgSrc = item.imagen
+        ? (item.imagen.startsWith('http') ? item.imagen : `/img/productos/${item.imagen}`)
+        : '/img/logo.jpeg';
+
+    // ✅ Mostrar detalles: color, talla, marca
+    const extras = [];
+    if (item.color) extras.push(`<span class="badge bg-secondary me-1">Color: ${item.color}</span>`);
+    if (item.talla) extras.push(`<span class="badge bg-secondary me-1">Talla: ${item.talla}</span>`);
+    if (item.marca) extras.push(`<span class="badge bg-light text-dark border me-1">Marca: ${item.marca}</span>`);
+    const extrasHTML = extras.length ? `<div class="mt-1">${extras.join('')}</div>` : '';
+
+    return `
+    <div class="prod-item">
+        <img src="${imgSrc}" alt="${item.producto_nombre}" class="prod-img">
+        <div class="flex-grow-1">
+            <div class="fw-bold small">${item.producto_nombre}</div>
+            <div class="text-muted small">
+                ${item.cantidad} x S/. ${parseFloat(item.precio_unitario).toFixed(2)}
+            </div>
+            ${extrasHTML}
+        </div>
+        <div class="text-success fw-bold small">
+            S/. ${parseFloat(item.subtotal).toFixed(2)}
+        </div>
+    </div>`;
+}).join('') + `
         <div class="d-flex justify-content-between pt-2 mt-1 border-top">
             <span class="text-muted small">Total del pedido</span>
             <span class="fw-bold text-success">S/. ${parseFloat(data.total).toFixed(2)}</span>

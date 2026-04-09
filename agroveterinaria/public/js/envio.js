@@ -1,6 +1,6 @@
 let subtotalProductos = 0;
-let costoEnvioActual = 0;
-let distritoActual = null;
+let costoEnvioActual  = 0;
+let distritoActual    = null;
 
 function verificarLogin() {
     const token = localStorage.getItem('token');
@@ -10,41 +10,83 @@ function verificarLogin() {
     }
 }
 
+async function cargarDatosCliente() {
+    const token = localStorage.getItem('token');
+    try {
+        const res  = await fetch('/api/auth/datos-envio', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+
+        // Prellenar nombre
+        if (data.nombres) {
+            const nombreCompleto = `${data.nombres} ${data.apellido_paterno || ''}`.trim();
+            document.getElementById('nombreEnvio').value = nombreCompleto;
+        }
+
+        // Prellenar teléfono
+        if (data.telefono) {
+            document.getElementById('telefono').value = data.telefono;
+        }
+
+        // Prellenar dirección habitual si existe
+        if (data.direccion_habitual) {
+            document.getElementById('direccion').value = data.direccion_habitual;
+        }
+
+        // Prellenar referencia habitual si existe
+        if (data.referencia_habitual) {
+            document.getElementById('referencias').value = data.referencia_habitual;
+        }
+
+        // Guardar número de documento para usarlo en comprobante
+        if (data.numero_documento) {
+            localStorage.setItem('numero_documento', data.numero_documento);
+            localStorage.setItem('tipo_documento', data.tipo_documento || 'DNI');
+        }
+
+    } catch (err) {
+        console.error('Error cargando datos del cliente:', err);
+        // Fallback: usar nombre del localStorage
+        const nombre = localStorage.getItem('nombre');
+        if (nombre) document.getElementById('nombreEnvio').value = nombre;
+    }
+}
+
 function cargarResumen() {
     const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-
-    if (carrito.length === 0) {
-        window.location.href = '/';
-        return;
-    }
+    if (carrito.length === 0) { window.location.href = '/'; return; }
 
     const container = document.getElementById('resumen-items');
     subtotalProductos = 0;
 
     container.innerHTML = carrito.map(item => {
-        const precio = parseFloat(item.precio) || 0;
-        const cantidad = parseInt(item.cantidad) || 1;
+        const precio      = parseFloat(item.precio) || 0;
+        const cantidad    = parseInt(item.cantidad) || 1;
         const itemSubtotal = precio * cantidad;
         subtotalProductos += itemSubtotal;
+
+        const extras = [];
+        if (item.color) extras.push(`Color: ${item.color}`);
+        if (item.talla) extras.push(`Talla: ${item.talla}`);
+        const extrasHTML = extras.length
+            ? `<small class="text-muted d-block">${extras.join(' | ')}</small>` : '';
+
         return `
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
                 <span class="fw-bold">${item.nombre}</span>
                 <small class="text-muted d-block">x${cantidad} unidades</small>
+                ${extrasHTML}
             </div>
             <span class="text-success fw-bold">S/. ${itemSubtotal.toFixed(2)}</span>
         </div>`;
     }).join('');
 
     document.getElementById('resumen-subtotal').innerText = 'S/. ' + subtotalProductos.toFixed(2);
-    document.getElementById('resumen-total').innerText = 'S/. ' + subtotalProductos.toFixed(2);
-
-    // Prellenar datos del usuario logueado
-    const nombre = localStorage.getItem('nombre');
-    if (nombre) document.getElementById('nombreEnvio').value = nombre;
+    document.getElementById('resumen-total').innerText    = 'S/. ' + subtotalProductos.toFixed(2);
 }
 
-// Cargar departamentos
 async function cargarDepartamentos() {
     try {
         const res = await fetch('/api/ubigeo/departamentos');
@@ -53,24 +95,21 @@ async function cargarDepartamentos() {
         departamentos.forEach(d => {
             const option = document.createElement('option');
             option.value = d.id_departamento;
-            option.text = d.nombre;
+            option.text  = d.nombre;
             select.appendChild(option);
         });
-    } catch (err) {
-        console.error('Error cargando departamentos:', err);
-    }
+    } catch (err) { console.error('Error cargando departamentos:', err); }
 }
 
-// Cargar provincias
 async function cargarProvincias() {
-    const idDepartamento = document.getElementById('departamento').value;
+    const idDepartamento  = document.getElementById('departamento').value;
     const selectProvincia = document.getElementById('provincia');
-    const selectDistrito = document.getElementById('distrito');
+    const selectDistrito  = document.getElementById('distrito');
 
     selectProvincia.innerHTML = '<option value="">Seleccione...</option>';
-    selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
-    selectProvincia.disabled = true;
-    selectDistrito.disabled = true;
+    selectDistrito.innerHTML  = '<option value="">Seleccione...</option>';
+    selectProvincia.disabled  = true;
+    selectDistrito.disabled   = true;
 
     if (!idDepartamento) return;
 
@@ -80,22 +119,19 @@ async function cargarProvincias() {
         provincias.forEach(p => {
             const option = document.createElement('option');
             option.value = p.id_provincia;
-            option.text = p.nombre;
+            option.text  = p.nombre;
             selectProvincia.appendChild(option);
         });
         selectProvincia.disabled = false;
-    } catch (err) {
-        console.error('Error cargando provincias:', err);
-    }
+    } catch (err) { console.error('Error cargando provincias:', err); }
 }
 
-// Cargar distritos
 async function cargarDistritos() {
-    const idProvincia = document.getElementById('provincia').value;
+    const idProvincia    = document.getElementById('provincia').value;
     const selectDistrito = document.getElementById('distrito');
 
     selectDistrito.innerHTML = '<option value="">Seleccione...</option>';
-    selectDistrito.disabled = true;
+    selectDistrito.disabled  = true;
 
     if (!idProvincia) return;
 
@@ -105,36 +141,30 @@ async function cargarDistritos() {
         distritos.forEach(d => {
             const option = document.createElement('option');
             option.value = d.id_distrito;
-            option.text = d.nombre;
+            option.text  = d.nombre;
             option.setAttribute('data-costo', d.costo_envio);
             selectDistrito.appendChild(option);
         });
         selectDistrito.disabled = false;
-    } catch (err) {
-        console.error('Error cargando distritos:', err);
-    }
+    } catch (err) { console.error('Error cargando distritos:', err); }
 }
 
-// Actualizar costo de envío
 function actualizarCostoEnvio() {
     const selectDistrito = document.getElementById('distrito');
     const opcion = selectDistrito.options[selectDistrito.selectedIndex];
-
     if (!selectDistrito.value) return;
 
     costoEnvioActual = parseFloat(opcion.getAttribute('data-costo')) || 5.00;
-    distritoActual = {
-        id: selectDistrito.value,
+    distritoActual   = {
+        id:     selectDistrito.value,
         nombre: opcion.text,
-        costo: costoEnvioActual
+        costo:  costoEnvioActual
     };
 
-    // Mostrar badge
     const badge = document.getElementById('costo-envio-badge');
     badge.style.display = 'block';
     document.getElementById('costo-envio-texto').innerText = 'S/. ' + costoEnvioActual.toFixed(2);
 
-    // Actualizar resumen
     document.getElementById('resumen-envio').innerText = 'S/. ' + costoEnvioActual.toFixed(2);
     document.getElementById('resumen-envio').classList.remove('text-muted');
     document.getElementById('resumen-envio').classList.add('text-success', 'fw-bold');
@@ -143,29 +173,22 @@ function actualizarCostoEnvio() {
     document.getElementById('resumen-total').innerText = 'S/. ' + total.toFixed(2);
 }
 
-document.getElementById('envioForm').addEventListener('submit', (e) => {
+document.getElementById('envioForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const nombre = document.getElementById('nombreEnvio').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const direccion = document.getElementById('direccion').value.trim();
+    const nombre     = document.getElementById('nombreEnvio').value.trim();
+    const telefono   = document.getElementById('telefono').value.trim();
+    const direccion  = document.getElementById('direccion').value.trim();
     const referencias = document.getElementById('referencias').value.trim();
 
-    const depSelect = document.getElementById('departamento');
+    const depSelect  = document.getElementById('departamento');
     const provSelect = document.getElementById('provincia');
     const distSelect = document.getElementById('distrito');
 
-    if (!distSelect.value) {
-        alert('Por favor selecciona un distrito');
-        return;
-    }
+    if (!distSelect.value) { alert('Por favor selecciona un distrito'); return; }
+    if (!distritoActual)   { alert('Por favor selecciona un distrito válido'); return; }
 
-    if (!distritoActual) {
-        alert('Por favor selecciona un distrito válido');
-        return;
-    }
-
-    const depNombre = depSelect.options[depSelect.selectedIndex].text;
+    const depNombre  = depSelect.options[depSelect.selectedIndex].text;
     const provNombre = provSelect.options[provSelect.selectedIndex].text;
     const distNombre = distSelect.options[distSelect.selectedIndex].text;
 
@@ -174,16 +197,41 @@ document.getElementById('envioForm').addEventListener('submit', (e) => {
         telefono,
         direccion,
         referencias,
-        id_distrito: distritoActual.id,
-        nombre_distrito: distNombre,
-        nombre_provincia: provNombre,
+        id_distrito:         distritoActual.id,
+        nombre_distrito:     distNombre,
+        nombre_provincia:    provNombre,
         nombre_departamento: depNombre,
-        direccion_completa: `${direccion}, ${distNombre}, ${provNombre}, ${depNombre}`,
-        costo_envio: costoEnvioActual,
-        total: subtotalProductos + costoEnvioActual
+        direccion_completa:  `${direccion}, ${distNombre}, ${provNombre}, ${depNombre}`,
+        costo_envio:         costoEnvioActual,
+        total:               subtotalProductos + costoEnvioActual
     };
 
     localStorage.setItem('datosEnvio', JSON.stringify(datosEnvio));
+
+    // ✅ Guardar dirección y teléfono en la base de datos para futuros pedidos
+    try {
+        const token = localStorage.getItem('token');
+        await fetch('/api/auth/guardar-direccion', {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ direccion, referencia: referencias })
+        });
+
+        // Actualizar teléfono si cambió
+        await fetch('/api/auth/actualizar-perfil', {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({
+                nombres:          nombre,
+                apellido_paterno: '',
+                apellido_materno: '',
+                telefono
+            })
+        });
+    } catch (err) {
+        console.error('Error guardando datos:', err);
+    }
+
     window.location.href = '/comprobante.html';
 });
 
@@ -191,4 +239,5 @@ window.addEventListener('DOMContentLoaded', () => {
     verificarLogin();
     cargarResumen();
     cargarDepartamentos();
+    cargarDatosCliente();
 });

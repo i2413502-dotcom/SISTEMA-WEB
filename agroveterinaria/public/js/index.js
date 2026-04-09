@@ -1,36 +1,47 @@
-let productosBase = [];
+let productosBase    = [];
 let filtroAnimalActivo = 0;
-const RUTA_IMG = '/img/productos/';
-const IMG_ERROR = 'https://via.placeholder.com/300x300?text=Sin+Imagen';
+let paginaActual     = 1;
+const LIMITE         = 20;
+const RUTA_IMG       = '/img/productos/';
+const IMG_ERROR      = 'https://via.placeholder.com/300x300?text=Sin+Imagen';
 
 // Actualizar contador carrito
 function actualizarContadorCarrito() {
     const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    const total = carrito.reduce((sum, i) => sum + i.cantidad, 0);
-    const badge = document.getElementById('cart-count');
+    const total   = carrito.reduce((sum, i) => sum + i.cantidad, 0);
+    const badge   = document.getElementById('cart-count');
     if (badge) badge.innerText = total;
 }
 
-// Mostrar toast notificación
+// Mostrar toast
 function mostrarToast(nombre) {
     const toast = document.getElementById('toastCarrito');
-    const msg = document.getElementById('toast-mensaje');
+    const msg   = document.getElementById('toast-mensaje');
     msg.innerText = `"${nombre}" agregado al carrito`;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2500);
 }
 
-// Obtener productos desde API
-async function obtenerProductos(filtros = {}) {
+// Obtener productos con paginación
+async function obtenerProductos(filtros = {}, pagina = 1) {
     try {
-        let query = new URLSearchParams(filtros).toString();
-        const url = '/api/productos' + (query ? '?' + query : '');
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Error al obtener productos');
-        productosBase = await response.json();
-        aplicarFiltroAnimal();
-    } catch (error) {
-        console.error('Error:', error);
+        paginaActual = pagina;
+        const params = new URLSearchParams({ ...filtros, pagina, limite: LIMITE });
+
+        // Agregar filtro animal si está activo
+        if (filtroAnimalActivo > 0) {
+            params.set('id_tipo_animal', filtroAnimalActivo);
+        }
+
+        const res  = await fetch('/api/productos?' + params.toString());
+        const data = await res.json();
+
+        productosBase = data.productos;
+        renderizarProductos(data.productos);
+        renderizarPaginacion(data.pagina, data.totalPaginas, data.total, filtros);
+
+    } catch (err) {
+        console.error('Error:', err);
         document.getElementById('lista-productos').innerHTML =
             '<p class="text-center text-danger">Error al conectar con el servidor.</p>';
     }
@@ -39,12 +50,10 @@ async function obtenerProductos(filtros = {}) {
 // Renderizar productos
 function renderizarProductos(productos) {
     const contenedor = document.getElementById('lista-productos');
-    const contador = document.getElementById('contador-productos');
+    const contador   = document.getElementById('contador-productos');
     if (!contenedor) return;
 
-    if (contador) contador.innerText = productos.length;
-
-    if (!productos.length) {
+    if (!productos || !productos.length) {
         contenedor.innerHTML = `
             <div class="col-12 text-center py-5 text-muted">
                 <i class="bi bi-search" style="font-size:3rem;"></i>
@@ -57,7 +66,7 @@ function renderizarProductos(productos) {
     }
 
     contenedor.innerHTML = productos.map(p => {
-        const img = p.imagen ? `${RUTA_IMG}${p.imagen.trim()}` : IMG_ERROR;
+        const img        = p.imagen ? `${RUTA_IMG}${p.imagen.trim()}` : IMG_ERROR;
         const stockBadge = p.stock_actual <= 5
             ? '<span class="badge bg-danger position-absolute top-0 end-0 m-2">Poco stock</span>'
             : '';
@@ -75,62 +84,102 @@ function renderizarProductos(productos) {
                     <p class="mb-1 text-muted small text-uppercase">${p.categoria || 'General'}</p>
                     <h6 class="fw-bold text-dark text-truncate mb-1">${p.nombre}</h6>
                     <h5 class="fw-bold text-success mb-2">S/. ${parseFloat(p.precio_venta).toFixed(2)}</h5>
-                    <button class="btn-add mt-1" onclick="agregarAlCarrito(event, ${p.id_producto}, decodeURIComponent('${encodeURIComponent(p.nombre)}'), ${p.precio_venta}, '${p.imagen ? p.imagen.trim() : ''}', ${p.stock_actual || 0})">
-    <i class="bi bi-cart-plus"></i>
-</button>
+                    <button class="btn-add mt-1" onclick="agregarAlCarrito(event,
+                        ${p.id_producto},
+                        decodeURIComponent('${encodeURIComponent(p.nombre)}'),
+                        ${p.precio_venta},
+                        '${p.imagen ? p.imagen.trim() : ''}',
+                        ${p.stock_actual || 0})">
+                        <i class="bi bi-cart-plus"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
     }).join('');
 }
 
+// Renderizar paginación
+function renderizarPaginacion(paginaActual, totalPaginas, totalProductos, filtros) {
+    let contenedor = document.getElementById('paginacion');
+
+    // Si no existe el contenedor, créalo debajo de los productos
+    if (!contenedor) {
+        contenedor = document.createElement('div');
+        contenedor.id = 'paginacion';
+        contenedor.className = 'col-12 d-flex justify-content-center align-items-center gap-2 mt-2 mb-4 flex-wrap';
+        document.getElementById('lista-productos').parentNode.appendChild(contenedor);
+    }
+
+    if (totalPaginas <= 1) {
+        contenedor.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <span class="text-muted small me-2">
+            Mostrando página ${paginaActual} de ${totalPaginas} (${totalProductos} productos)
+        </span>`;
+
+    // Botón anterior
+    html += `<button class="btn btn-sm btn-outline-success"
+        ${paginaActual === 1 ? 'disabled' : ''}
+        onclick="obtenerProductos(obtenerFiltrosActuales(), ${paginaActual - 1})">
+        ← Anterior
+    </button>`;
+
+    // Números de página (máximo 5 visibles)
+    const inicio = Math.max(1, paginaActual - 2);
+    const fin    = Math.min(totalPaginas, inicio + 4);
+
+    for (let i = inicio; i <= fin; i++) {
+        html += `<button class="btn btn-sm ${i === paginaActual ? 'btn-success' : 'btn-outline-success'}"
+            onclick="obtenerProductos(obtenerFiltrosActuales(), ${i})">${i}</button>`;
+    }
+
+    // Botón siguiente
+    html += `<button class="btn btn-sm btn-outline-success"
+        ${paginaActual === totalPaginas ? 'disabled' : ''}
+        onclick="obtenerProductos(obtenerFiltrosActuales(), ${paginaActual + 1})">
+        Siguiente →
+    </button>`;
+
+    contenedor.innerHTML = html;
+}
+
+// Obtener filtros activos actualmente
+function obtenerFiltrosActuales() {
+    return {
+        categoria:  document.getElementById('filtroCategoria')?.value  || '',
+        precio_min: document.getElementById('filtroPrecioMin')?.value  || '',
+        precio_max: document.getElementById('filtroPrecioMax')?.value  || '',
+    };
+}
+
 // Filtrar por animal
 function filtrarAnimal(idAnimal, btn) {
     filtroAnimalActivo = idAnimal;
-
-    // Actualizar botones activos
     document.querySelectorAll('.filtro-animal .btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
-    aplicarFiltroAnimal();
+    obtenerProductos(obtenerFiltrosActuales(), 1);
 }
 
-function aplicarFiltroAnimal() {
-    let filtrados = [...productosBase];
-    if (filtroAnimalActivo > 0) {
-        filtrados = filtrados.filter(p => p.id_tipo_animal === filtroAnimalActivo);
-    }
-    renderizarProductos(filtrados);
-}
-
-// Buscador en tiempo real
+// Buscador en tiempo real (con debounce para no saturar)
+let timerBusqueda;
 const inputBuscador = document.getElementById('inputBuscador');
 if (inputBuscador) {
     inputBuscador.addEventListener('input', (e) => {
-        const busqueda = e.target.value.toLowerCase();
-        let filtrados = productosBase.filter(p =>
-            p.nombre.toLowerCase().includes(busqueda) ||
-            (p.categoria && p.categoria.toLowerCase().includes(busqueda))
-        );
-        if (filtroAnimalActivo > 0) {
-            filtrados = filtrados.filter(p => p.id_tipo_animal === filtroAnimalActivo);
-        }
-        renderizarProductos(filtrados);
+        clearTimeout(timerBusqueda);
+        timerBusqueda = setTimeout(() => {
+            const filtros = obtenerFiltrosActuales();
+            filtros.nombre = e.target.value;
+            obtenerProductos(filtros, 1);
+        }, 400); // espera 400ms después de que el usuario deja de escribir
     });
 }
 
 // Aplicar filtros
 function aplicarFiltros() {
-    const categoria = document.getElementById('filtroCategoria').value;
-    const precio_min = document.getElementById('filtroPrecioMin').value;
-    const precio_max = document.getElementById('filtroPrecioMax').value;
-
-    const filtros = {};
-    if (categoria) filtros.categoria = categoria;
-    if (precio_min) filtros.precio_min = precio_min;
-    if (precio_max) filtros.precio_max = precio_max;
-
-    obtenerProductos(filtros);
+    obtenerProductos(obtenerFiltrosActuales(), 1);
 }
 
 // Limpiar filtros
@@ -138,65 +187,66 @@ function limpiarFiltros() {
     document.getElementById('filtroCategoria').value = '';
     document.getElementById('filtroPrecioMin').value = '';
     document.getElementById('filtroPrecioMax').value = '';
+    if (inputBuscador) inputBuscador.value = '';
     filtroAnimalActivo = 0;
     document.querySelectorAll('.filtro-animal .btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.filtro-animal .btn').classList.add('active');
-    obtenerProductos();
+    const primero = document.querySelector('.filtro-animal .btn');
+    if (primero) primero.classList.add('active');
+    obtenerProductos({}, 1);
 }
 
-// Agregar al carrito
 // Agregar al carrito
 function agregarAlCarrito(event, id, nombre, precio, imagen, stock) {
     event.preventDefault();
     event.stopPropagation();
-
     stock = parseInt(stock) || 0;
-
-    if (stock <= 0) {
-        mostrarToast('Producto agotado');
-        return;
-    }
+    if (stock <= 0) { mostrarToast('Producto agotado'); return; }
 
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
     const existe = carrito.find(p => p.id_producto === id);
-
     if (existe) {
-        if (existe.cantidad >= stock) {
-            alert('No hay más stock disponible');
-            return;
-        }
+        if (existe.cantidad >= stock) { alert('No hay más stock disponible'); return; }
         existe.cantidad += 1;
     } else {
-        carrito.push({
-            id_producto: id,
-            nombre: nombre,
-            precio: parseFloat(precio),
-            imagen: imagen,
-            cantidad: 1
-        });
+        carrito.push({ id_producto: id, nombre, precio: parseFloat(precio), imagen, cantidad: 1 });
     }
-
     localStorage.setItem('carrito', JSON.stringify(carrito));
     actualizarContadorCarrito();
     mostrarToast(nombre);
 }
 
+// Cargar botones de animales dinámicamente
+async function cargarFiltrosAnimales() {
+    try {
+        const res      = await fetch('/api/animales');
+        const animales = await res.json();
+        const emojis   = {
+            'Perro':'🐶','Gato':'🐱','Ave':'🐔','Conejo':'🐰',
+            'conejo':'🐰','Camello':'🐪','cerdo':'🐷','Cerdo':'🐷',
+            'Vaca':'🐄','Caballo':'🐴','Oveja':'🐑'
+        };
+        const contenedor = document.getElementById('contenedor-animales');
+        animales.filter(a => a.estado === 'ACTIVO').forEach(a => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-outline-success btn-sm';
+            btn.onclick   = function() { filtrarAnimal(a.id_tipo_animal, this); };
+            btn.innerHTML = `${emojis[a.nombre] || '🐾'} ${a.nombre}`;
+            contenedor.appendChild(btn);
+        });
+    } catch (err) { console.error('Error cargando animales:', err); }
+}
+
 // Iniciar
 window.addEventListener('DOMContentLoaded', () => {
+    cargarFiltrosAnimales();
     obtenerProductos();
     actualizarContadorCarrito();
 
-    const nombre = localStorage.getItem('nombre');
-    const rol = localStorage.getItem('rol');
+    const nombre    = localStorage.getItem('nombre');
+    const rol       = localStorage.getItem('rol');
     const btnUsuario = document.getElementById('btn-usuario');
-
     if (nombre && btnUsuario) {
-        if (rol === 'COLABORADOR') {
-            btnUsuario.href = '/dashboard.html';
-            btnUsuario.title = 'Dashboard - ' + nombre;
-        } else {
-            btnUsuario.href = '/perfil.html';
-            btnUsuario.title = 'Mi perfil - ' + nombre;
-        }
+        btnUsuario.href  = rol === 'COLABORADOR' ? '/dashboard.html' : '/perfil.html';
+        btnUsuario.title = (rol === 'COLABORADOR' ? 'Dashboard - ' : 'Mi perfil - ') + nombre;
     }
 });

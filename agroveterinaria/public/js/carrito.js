@@ -30,13 +30,18 @@ function renderizarCarrito() {
     container.innerHTML = '';
 
     carrito.forEach(item => {
-        // Asegurar que precio y cantidad sean números válidos
-        const precio = parseFloat(item.precio) || 0;
-        const cantidad = parseInt(item.cantidad) || 1;
+        const precio    = parseFloat(item.precio) || 0;
+        const cantidad  = parseInt(item.cantidad) || 1;
         const itemSubtotal = precio * cantidad;
         subtotal += itemSubtotal;
 
         const img = item.imagen ? `${RUTA_IMG}${item.imagen.trim()}` : IMG_ERROR;
+
+        // ✅ Mostrar color y talla si existen
+        const detalles = [];
+        if (item.color) detalles.push(`<span class="badge bg-secondary me-1">Color: ${item.color}</span>`);
+        if (item.talla) detalles.push(`<span class="badge bg-secondary me-1">Talla: ${item.talla}</span>`);
+        const detallesHTML = detalles.length ? `<div class="mt-1">${detalles.join('')}</div>` : '';
 
         const div = document.createElement('div');
         div.className = 'card mb-3 shadow-sm';
@@ -50,21 +55,23 @@ function renderizarCarrito() {
                     <div class="col-4">
                         <h6 class="fw-bold mb-1">${item.nombre}</h6>
                         <p class="text-muted mb-0 small">S/. ${precio.toFixed(2)} c/u</p>
+                        ${detallesHTML}
                     </div>
                     <div class="col-3 d-flex align-items-center gap-2">
                         <button class="btn btn-sm btn-outline-secondary"
-                                onclick="cambiarCantidad(${item.id_producto}, ${cantidad - 1})">-</button>
+                                onclick="cambiarCantidad(${item.id_producto}, ${cantidad - 1}, '${item.color || ''}', '${item.talla || ''}')">-</button>
                         <input type="number" class="form-control form-control-sm cantidad-input"
                                value="${cantidad}" min="1"
-                               onchange="cambiarCantidad(${item.id_producto}, this.value)">
+                               onchange="cambiarCantidad(${item.id_producto}, this.value, '${item.color || ''}', '${item.talla || ''}')">
                         <button class="btn btn-sm btn-outline-secondary"
-                                onclick="cambiarCantidad(${item.id_producto}, ${cantidad + 1})">+</button>
+                                onclick="cambiarCantidad(${item.id_producto}, ${cantidad + 1}, '${item.color || ''}', '${item.talla || ''}')">+</button>
                     </div>
                     <div class="col-2 text-center fw-bold text-success">
                         S/. ${itemSubtotal.toFixed(2)}
                     </div>
                     <div class="col-1 text-center">
-                        <button class="btn btn-sm btn-danger" onclick="eliminarProducto(${item.id_producto})">
+                        <button class="btn btn-sm btn-danger"
+                                onclick="eliminarProducto(${item.id_producto}, '${item.color || ''}', '${item.talla || ''}')">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -77,14 +84,18 @@ function renderizarCarrito() {
     document.getElementById('total').innerText = 'S/. ' + subtotal.toFixed(2);
 }
 
-function cambiarCantidad(id, cantidad) {
+function cambiarCantidad(id, cantidad, color, talla) {
     cantidad = parseInt(cantidad);
+    color = color || null;
+    talla = talla || null;
     if (cantidad < 1) {
-        eliminarProducto(id);
+        eliminarProducto(id, color, talla);
         return;
     }
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    const item = carrito.find(p => p.id_producto === id);
+    const item = carrito.find(p => p.id_producto === id
+        && (p.color || null) === color
+        && (p.talla || null) === talla);
     if (item) {
         item.cantidad = cantidad;
         localStorage.setItem('carrito', JSON.stringify(carrito));
@@ -93,9 +104,13 @@ function cambiarCantidad(id, cantidad) {
     }
 }
 
-function eliminarProducto(id) {
+function eliminarProducto(id, color, talla) {
+    color = color || null;
+    talla = talla || null;
     let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-    carrito = carrito.filter(p => p.id_producto !== id);
+    carrito = carrito.filter(p => !(p.id_producto === id
+        && (p.color || null) === color
+        && (p.talla || null) === talla));
     localStorage.setItem('carrito', JSON.stringify(carrito));
     renderizarCarrito();
     actualizarContadorCarrito();

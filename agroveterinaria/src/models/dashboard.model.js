@@ -53,7 +53,7 @@ exports.getProductosMasVendidos = async () => {
     return rows;
 };
 
-// Stock actual de todos los productos activos
+// Stock actual 
 exports.getStockProductos = async () => {
     const [rows] = await db.query(`
         SELECT nombre, stock_actual, stock_minimo
