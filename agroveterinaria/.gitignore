@@ -1,0 +1,14 @@
+# Variables de entorno - NUNCA subir esto
+.env
+
+# Dependencias - se reinstalan con npm install
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+serviceAccountKey.json

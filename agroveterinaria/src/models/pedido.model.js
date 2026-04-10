@@ -19,12 +19,19 @@ exports.crearDetallePedido = async (id_pedido, items) => {
     for (const item of items) {
         await db.query(
             `INSERT INTO detalle_pedido 
-             (id_pedido, id_producto, cantidad, precio_unitario, subtotal)
-             VALUES (?, ?, ?, ?, ?)`,
-            [id_pedido, item.id_producto, item.cantidad, 
-             item.precio, item.precio * item.cantidad]
+             (id_pedido, id_producto, cantidad, precio_unitario, subtotal, color, talla, marca)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                id_pedido,
+                item.id_producto,
+                item.cantidad,
+                item.precio,
+                item.precio * item.cantidad,
+                item.color  || null,
+                item.talla  || null,
+                item.marca  || null
+            ]
         );
-        // Actualizar stock
         await db.query(
             `UPDATE producto SET stock_actual = stock_actual - ? 
              WHERE id_producto = ?`,
@@ -73,12 +80,18 @@ exports.obtenerPedidoCompleto = async (id_pedido) => {
     );
 
     const [detalles] = await db.query(
-        `SELECT dp.*, pr.nombre AS producto_nombre
+        `SELECT dp.*, pr.nombre AS producto_nombre, pr.imagen, pr.marca AS marca_producto
          FROM detalle_pedido dp
          JOIN producto pr ON dp.id_producto = pr.id_producto
          WHERE dp.id_pedido = ?`,
         [id_pedido]
     );
 
-    return { ...pedido[0], detalles };
+    // ✅ Usar marca del detalle si existe, sino la del producto
+    const detallesConMarca = detalles.map(d => ({
+        ...d,
+        marca: d.marca || d.marca_producto || null
+    }));
+
+    return { ...pedido[0], detalles: detallesConMarca };
 };
